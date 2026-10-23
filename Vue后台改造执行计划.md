@@ -27,12 +27,12 @@
 
 | 类别 | 选型 | 版本要求 | 说明 |
 |---|---|---|---|
-| 运行时 | Node.js | **22.x LTS（最低 20.19 / 22.12）；本机已验证 24.21.0 可用** | Vite 7 的硬性要求，低版本直接启动失败 |
+| 运行时 | Node.js | **22.x LTS（最低 20.19 / 22.12）；本机已验证 24.21.0 可用** | Vite 7 的硬性要求，低版本直接启动失败；24.21.0 兼容 22.x LTS API，可直接使用 |
 | 包管理 | npm | ≥ 10.9，随 Node 安装 | 用 `package-lock.json` + `npm ci` 保证一致性 |
 | 核心框架 | Vue | `^3.5.x`（组合式 API + `<script setup>`） | 不使用 Options API，不引入 TS（现有代码是 JS，降低迁移成本） |
 | 构建工具 | **Vite** | `^7.x` + `@vitejs/plugin-vue ^6.x` | 不选 Webpack：冷启动、HMR 均优于 Webpack 5，且是 Vue 官方推荐 |
 | 路由 | Vue Router | `^4.5.x`，**hash 模式** | 生产构建由 Spring Boot 托管，hash 模式无需后端配置 fallback |
-| 状态管理 | Pinia | `^3.0.x` | 只建 2 个 store：`auth`（登录态/权限）、`app`（侧栏折叠/未读角标） |
+| 状态管理 | Pinia | `^4.0.x` | 当前最新稳定版（v4.1.0，2025-10 发布）；只建 2 个 store：`auth`（登录态/权限）、`app`（侧栏折叠/未读角标）。Pinia v4 相比 v2 的破坏性改动仅废弃了 store 的 `$patch` 回调形式，本项目用组合式 API 写法不受影响 |
 | UI 组件库 | **Element Plus** | `^2.11.x` + `@element-plus/icons-vue ^2.3.x` | 表格/表单/弹窗/消息/分页全覆盖；中文 locale 必须显式配置 |
 | HTTP | Axios | `^1.12.x` | 统一拦截 `ApiResponse{code,message,data}` |
 | 图表 | D3 | `^7.9.x` | 复用现有绘图代码，视觉零偏差（ECharts 作为二期可选升级，不进本期） |
