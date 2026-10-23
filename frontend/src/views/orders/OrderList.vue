@@ -233,8 +233,8 @@ onMounted(load)
       </div>
 
       <template #footer>
-        <button class="btn ghost" @click="shipDialog = false">取消</button>
-        <button class="btn primary" @click="submitShip">确定发货</button>
+        <button type="button" class="btn ghost" @click="shipDialog = false">取消</button>
+        <button type="button" class="btn primary" @click="submitShip">确定发货</button>
       </template>
     </el-dialog>
 

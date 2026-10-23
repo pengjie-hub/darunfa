@@ -121,8 +121,8 @@ onMounted(load)
       </div>
 
       <template #footer>
-        <button class="btn ghost" @click="stockVisible = false">取消</button>
-        <button class="btn primary" @click="submitStock">确认调整</button>
+        <button type="button" class="btn ghost" @click="stockVisible = false">取消</button>
+        <button type="button" class="btn primary" @click="submitStock">确认调整</button>
       </template>
     </el-dialog>
   </div>
