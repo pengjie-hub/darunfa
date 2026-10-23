@@ -1,0 +1,98 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.MyApplication7" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 品牌主色 -->
+        <item name="colorPrimary">@color/rt_primary</item>
+        <item name="colorOnPrimary">@color/rt_text_on_primary</item>
+        <item name="colorPrimaryContainer">@color/rt_primary_light</item>
+        <item name="colorOnPrimaryContainer">@color/rt_primary_dark</item>
+
+        <!-- 强调色 -->
+        <item name="colorSecondary">@color/rt_accent</item>
+        <item name="colorOnSecondary">@color/rt_text_on_primary</item>
+        <item name="colorSecondaryContainer">@color/rt_accent_light</item>
+        <item name="colorOnSecondaryContainer">@color/rt_text_on_primary</item>
+
+        <!-- 背景与表面 -->
+        <item name="android:colorBackground">@color/rt_background</item>
+        <item name="colorSurface">@color/rt_surface</item>
+        <item name="colorSurfaceVariant">@color/rt_surface_variant</item>
+        <item name="colorOnSurface">@color/rt_text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/rt_text_secondary</item>
+
+        <!-- 状态栏与导航栏 -->
+        <item name="android:statusBarColor">@color/rt_primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/rt_background</item>
+
+        <!-- 文字与分割 -->
+        <item name="android:textColorPrimary">@color/rt_text_primary</item>
+        <item name="android:textColorSecondary">@color/rt_text_secondary</item>
+        <item name="android:textColorHint">@color/rt_text_hint</item>
+
+        <!-- 统一按压反馈：框架控件（?attr/selectableItemBackground 底）自动获得品牌红涟漪 -->
+        <item name="android:colorControlHighlight">@color/rt_ripple</item>
+
+        <!-- 控件默认样式 -->
+        <item name="materialButtonStyle">@style/RtButton.Primary</item>
+        <item name="textInputStyle">@style/RtTextInput</item>
+        <item name="toolbarStyle">@style/RtToolbar</item>
+    </style>
+
+    <style name="Theme.MyApplication7" parent="Base.Theme.MyApplication7">
+        <item name="android:activityOpenEnterAnimation">@anim/activity_enter</item>
+        <item name="android:activityOpenExitAnimation">@anim/activity_exit</item>
+        <item name="android:activityCloseEnterAnimation">@anim/activity_enter</item>
+        <item name="android:activityCloseExitAnimation">@anim/activity_exit</item>
+    </style>
+
+    <style name="Theme.MyApplication7.FullScreen" parent="Base.Theme.MyApplication7">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <!-- 大润发按钮样式 -->
+    <style name="RtButton.Primary" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/rt_primary</item>
+        <item name="android:textColor">@color/rt_text_on_primary</item>
+        <item name="cornerRadius">@dimen/radius_md</item>
+        <item name="android:textSize">@dimen/text_subtitle</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingTop">@dimen/space_12</item>
+        <item name="android:paddingBottom">@dimen/space_12</item>
+        <!-- 移除 MaterialButton 默认 insetTop/Bottom(各6dp)，避免固定高度按钮文字被上下裁切 -->
+        <item name="android:insetTop">@dimen/space_0</item>
+        <item name="android:insetBottom">@dimen/space_0</item>
+    </style>
+
+    <style name="RtButton.Secondary" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/rt_primary</item>
+        <item name="android:textColor">@color/rt_primary</item>
+        <item name="cornerRadius">@dimen/radius_md</item>
+        <item name="android:textSize">@dimen/text_body</item>
+        <!-- 小尺寸按钮(32/36dp)需要紧凑内边距，同时移除默认 inset 保证文字完整显示 -->
+        <item name="android:paddingTop">@dimen/space_6</item>
+        <item name="android:paddingBottom">@dimen/space_6</item>
+        <item name="android:insetTop">@dimen/space_0</item>
+        <item name="android:insetBottom">@dimen/space_0</item>
+    </style>
+
+    <!-- 输入框样式 -->
+    <style name="RtTextInput" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/rt_border</item>
+        <item name="boxCornerRadiusTopStart">@dimen/radius_md</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_md</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_md</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_md</item>
+        <item name="hintTextColor">@color/rt_text_hint</item>
+    </style>
+
+    <!-- Toolbar 样式 -->
+    <style name="RtToolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:background">@color/rt_primary</item>
+        <item name="titleTextColor">@color/rt_text_on_primary</item>
+        <item name="navigationIconTint">@color/rt_text_on_primary</item>
+        <item name="elevation">@dimen/elevation_flat</item>
+    </style>
+</resources>

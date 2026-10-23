@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rt_background"
+    tools:context=".activity.MainActivity">
+
+    <FrameLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/main_bottom_nv"
+        android:background="@color/rt_background" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/main_bottom_nv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="@dimen/space_12"
+        android:layout_marginEnd="@dimen/space_12"
+        android:layout_marginBottom="@dimen/space_8"
+        android:background="@drawable/bg_section_card"
+        android:elevation="@dimen/elevation_lg"
+        app:itemIconTint="@color/rt_primary"
+        app:itemRippleColor="@color/rt_ripple"
+        app:itemTextColor="@color/rt_primary"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/navigation" />
+
+    <!--
+      「小发」悬浮球入口：挂在 MainActivity 而不是某个 Fragment 上，
+      四个 tab（首页/分类/购物车/我的）都能看到它。
+      必须显式给尺寸 —— AssistantFab 内部用 <merge> 承载 match_parent 的「发」字，
+      wrap_content 会量成 0。
+      marginBottom 取 84dp 而不是 12dp：购物车页底部有一条 72dp 高的结算栏（含「结算」按钮），
+      它紧贴导航栏上方；用 12dp 的话悬浮球一进 App 就压住结算按钮，非常刺眼。
+      84dp = 结算栏 72dp + 12dp 间隙，四个 tab 里都不会挡到主操作。
+      用户拖走后位置会持久化，这里只是首次的初始位置。
+    -->
+    <com.example.myapplication.view.AssistantFab
+        android:id="@+id/fab_assistant"
+        android:layout_width="@dimen/size_56"
+        android:layout_height="@dimen/size_56"
+        android:layout_above="@id/main_bottom_nv"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="@dimen/space_12"
+        android:layout_marginBottom="@dimen/size_84" />
+</RelativeLayout>

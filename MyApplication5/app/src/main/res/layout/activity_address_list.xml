@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  收货地址管理页（AddressListActivity）
+  列表 + 空状态 + 底部「新增地址」。新增/编辑走 dialog_address_edit 弹窗。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/rt_background">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rt_primary"
+        app:navigationContentDescription="返回"
+        app:navigationIcon="@drawable/ic_circle_arrow_back">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/space_10"
+            android:text="收货地址"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_addresses"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="@dimen/space_12"
+            android:paddingBottom="@dimen/space_12"
+            tools:listitem="@layout/item_address" />
+
+        <!-- 空状态 -->
+        <LinearLayout
+            android:id="@+id/state_empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="还没有收货地址"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_subtitle" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_8"
+                android:text="添加一条并设为默认，结算时就不用手填手机号和地址了"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_label" />
+        </LinearLayout>
+
+        <!-- 加载中 -->
+        <LinearLayout
+            android:id="@+id/state_loading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_12"
+                android:text="加载中…"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_body" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- 底部新增按钮 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rt_surface"
+        android:orientation="vertical"
+        android:padding="@dimen/space_12"
+        android:elevation="@dimen/elevation_lg">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_add_address"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/size_touch"
+            android:text="新增收货地址"
+            android:textSize="@dimen/text_subtitle"
+            android:textColor="@color/rt_text_on_primary"
+            app:backgroundTint="@color/rt_primary"
+            app:cornerRadius="@dimen/radius_xl" />
+    </LinearLayout>
+</LinearLayout>

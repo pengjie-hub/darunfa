@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/space_24"
+    android:height="@dimen/space_24"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 圆形灰色背景 -->
+    <path
+        android:fillColor="@color/rt_icon_circle_bg"
+        android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2z"/>
+    <!-- 白色左箭头 -->
+    <path
+        android:fillColor="@color/rt_surface"
+        android:pathData="M15,18l-6,-6 6,-6 1.41,1.41L10.83,12l5.58,5.59z"/>
+</vector>

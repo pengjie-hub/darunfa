@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AI 助手：物流时间线节点
+  =====================================================
+  每行：左侧"●"标志（圆点） + 右侧"时间 + 状态 + 备注"。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="top"
+    android:orientation="horizontal"
+    android:paddingTop="@dimen/space_4"
+    android:paddingBottom="@dimen/space_4">
+
+    <TextView
+        android:id="@+id/tv_chat_logistics_node_dot"
+        android:layout_width="@dimen/space_14"
+        android:layout_height="@dimen/space_14"
+        android:layout_marginTop="@dimen/space_4"
+        android:background="@drawable/bg_chat_logistics_dot"
+        android:gravity="center"
+        android:textColor="@color/rt_text_on_primary"
+        android:textSize="@dimen/text_caption"
+        tools:text="•" />
+
+    <LinearLayout
+        android:layout_width="@dimen/space_0"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_8"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_chat_logistics_node_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/chat_text_ai"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold"
+            tools:text="已发货" />
+
+        <TextView
+            android:id="@+id/tv_chat_logistics_node_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/chat_text_ai_muted"
+            android:textSize="@dimen/text_caption"
+            tools:text="2026-09-11 14:32" />
+
+        <TextView
+            android:id="@+id/tv_chat_logistics_node_remark"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/chat_text_ai_muted"
+            android:textSize="@dimen/text_caption"
+            tools:text="顺丰揽收成功" />
+    </LinearLayout>
+</LinearLayout>

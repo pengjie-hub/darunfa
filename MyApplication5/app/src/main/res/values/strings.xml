@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">大润发</string>
+
+    <!-- ChatAssistantView 默认文案 -->
+    <string name="chat_default_placeholder">说点什么吧…</string>
+    <string name="chat_default_send">发送</string>
+    <string name="chat_meta_aborted">已中断</string>
+    <string name="chat_meta_error_prefix">加载失败：</string>
+
+    <!-- AI 助手附件卡片 -->
+    <string name="chat_attachment_product_image_desc">商品图片</string>
+    <string name="chat_attachment_order_no_default_address">尚未设置默认收货地址</string>
+    <string name="chat_attachment_need_login">请先登录后再使用 AI 助手</string>
+
+    <!-- 小发入口与等待反馈 -->
+    <string name="assistant_fab_text">发</string>
+    <string name="assistant_fab_desc">打开小发智能购物助手</string>
+    <!-- 后端要跑完 5 轮工具调用（通常 2-8 秒），期间必须给个明确的阶段性文案，
+         否则用户看着空白气泡会以为卡死 -->
+    <string name="chat_pending_hint">小发正在为你查询…</string>
+</resources>

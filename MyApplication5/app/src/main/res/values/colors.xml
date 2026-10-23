@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 大润发品牌色 -->
+    <color name="rt_primary">#DE1313</color>
+    <color name="rt_primary_dark">#B71C1C</color>
+    <!-- 主色浅容器：品牌红浅底，供 Material3 colorPrimaryContainer 等使用（可承深红字） -->
+    <color name="rt_primary_light">#FDE0E0</color>
+    <!-- 主色极浅底：唯一能稳定承载 #DE1313 正文红字的浅底（CR 4.59） -->
+    <color name="rt_primary_surface">#FEF3F3</color>
+    <!-- 亮红（强调/描边用，禁白字）：促销红渐变的亮端 -->
+    <color name="rt_primary_bright">#FF5252</color>
+    <!-- 深红：促销红渐变的深端 -->
+    <color name="rt_primary_deep">#9E0A0A</color>
+    <!-- 强调深橙：作正文/实底时使用（白字 CR 5.18），替代旧 #FF5722 正文用法 -->
+    <color name="rt_accent">#C2410C</color>
+    <color name="rt_accent_light">#FF8A65</color>
+
+    <!-- 促销色：折扣类走橙色，与满减红形成区分（弹框头部渐变的深/浅两端） -->
+    <color name="rt_promo_orange">#FF7A1A</color>
+    <color name="rt_promo_orange_light">#FFB03A</color>
+    <!-- 促销橙渐变深端 -->
+    <color name="rt_promo_orange_deep">#E64A0A</color>
+    <!-- 促销类型标签底（95% 白） -->
+    <color name="rt_promo_type_tag_bg">#F2FFFFFF</color>
+
+    <!-- 界面背景 -->
+    <color name="rt_background">#F5F5F5</color>
+    <color name="rt_surface">#FFFFFF</color>
+    <color name="rt_surface_variant">#FAFAFA</color>
+
+    <!-- 文字颜色 -->
+    <color name="rt_text_primary">#212121</color>
+    <color name="rt_text_secondary">#757575</color>
+    <!-- 提示/占位文字：旧 #9E9E9E 对白底仅 2.68（不达标），加深到 #757575（4.61 ✅） -->
+    <color name="rt_text_hint">#757575</color>
+    <color name="rt_text_disabled">#BDBDBD</color>
+    <color name="rt_text_on_primary">#FFFFFF</color>
+
+    <!-- 边框与分隔线 -->
+    <color name="rt_divider">#EEEEEE</color>
+    <color name="rt_border">#E0E0E0</color>
+    <color name="rt_ripple">#1FDE1313</color>
+
+    <!-- 状态颜色 -->
+    <color name="rt_warning">#FFC107</color>
+    <!-- 信息色：旧 #2196F3 对白底仅 3.12（不达标），加深到 #1565C0（5.75 ✅） -->
+    <color name="rt_info">#1565C0</color>
+    <!-- 订单状态 chip 配套色：淡色底（*_surface）+ 达标文字色（*_dark）。
+         文字色均满足 WCAG AA 正文级（对比度 ≥ 4.5:1，因 chip 文字 11sp bold 不适用大号文本放宽）。 -->
+    <color name="rt_success_surface">#E8F5E9</color>
+    <color name="rt_success_dark">#2E7D32</color>
+    <color name="rt_info_dark">#1565C0</color>
+    <color name="rt_tag_highlight_dark">#BF360C</color>
+    <!-- 三级文字灰：弱化但对比度达标（用于「已取消 / 中性」chip 文字，高于 rt_text_secondary 以适配浅灰底） -->
+    <color name="rt_text_tertiary">#424242</color>
+
+    <!-- 品牌渐变/主色上的文字与分隔 -->
+    <color name="rt_text_on_primary_muted">#E0FFFFFF</color>
+    <color name="rt_text_on_gradient_secondary">#FFF8F8</color>
+    <color name="rt_divider_on_primary">#33FFFFFF</color>
+
+    <!-- 遮罩与阴影 -->
+    <color name="rt_scrim">#40000000</color>
+    <color name="rt_scrim_soft">#33000000</color>
+    <color name="rt_scrim_strong">#8A000000</color>
+    <color name="rt_shadow">#80000000</color>
+    <color name="rt_shadow_soft">#66000000</color>
+
+    <!-- 透明与半透明白（供 drawable 引用，替代字面值） -->
+    <color name="rt_transparent">#00000000</color>
+    <color name="rt_white_08">#14FFFFFF</color>
+    <color name="rt_white_12">#1FFFFFFF</color>
+
+    <!-- 信息/标签强调表面色 -->
+    <color name="rt_info_surface">#F3E9FF</color>
+    <color name="rt_tag_highlight">#FF9800</color>
+    <color name="rt_tag_highlight_surface">#FFF3E0</color>
+    <!-- 商家回复标签：淡红底 + 主色字，与「用户追评」的橙色标签区分开 -->
+    <color name="rt_tag_merchant">#DE1313</color>
+    <color name="rt_tag_merchant_surface">#FFEBEE</color>
+
+    <!-- 组件语义色（从 drawable 收敛） -->
+    <color name="rt_member_tag_bg">#4D000000</color>
+    <color name="rt_member_tag_stroke">#4DFFFFFF</color>
+    <color name="rt_hot_tag_surface">#FFF4F4</color>
+    <color name="rt_hot_tag_border">#FFD6D6</color>
+    <color name="rt_primary_soft">#E77878</color>
+    <color name="rt_login_card_surface">#A6FFFFFF</color>
+    <color name="rt_search_bg">#EBE9E9</color>
+    <color name="rt_indicator_normal">#88FFFFFF</color>
+    <color name="rt_goods_tag">#FF4081</color>
+
+    <!-- 头像占位色（去紫 + 白剪影达标：彩底 + 白色人形剪影，每色白剪影对比度 ≥4.5:1）
+         CR(白剪影 on 彩底)=1.05/(L+0.05)：1=#C62828 5.62、2=#1565C0 5.75、3=#2E7D32 5.13、
+         4=#BF360C 5.60、5=#00838F 4.52、6=#00695C 6.61 -->
+    <color name="rt_avatar_1">#C62828</color>
+    <color name="rt_avatar_2">#1565C0</color>
+    <color name="rt_avatar_3">#2E7D32</color>
+    <color name="rt_avatar_4">#BF360C</color>
+    <color name="rt_avatar_5">#00838F</color>
+    <color name="rt_avatar_6">#00695C</color>
+
+    <!-- 图标与启动图语义色 -->
+    <color name="rt_icon_circle_bg">#99808080</color>
+    <color name="rt_launcher_background">#3DDC84</color>
+</resources>

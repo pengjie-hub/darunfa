@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 订单状态 chip（中性灰：已取消 / 未知兜底）：浅灰底（rt_border，与白卡对比 1.32:1，肉眼可辨）
+     + 三级文字灰（rt_text_tertiary，对比度 7.61:1） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/rt_border" />
+    <corners android:radius="@dimen/radius_md" />
+</shape>

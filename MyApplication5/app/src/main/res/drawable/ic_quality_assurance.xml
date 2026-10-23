@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/space_24"
+    android:height="@dimen/space_24"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 圆形灰色轮廓 -->
+    <path
+        android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2z"
+        android:strokeWidth="2"
+        android:strokeColor="@color/rt_text_secondary"
+    android:fillColor="@android:color/transparent"/>  <!-- 透明填充 -->
+
+    <!-- 红色对勾 -->
+    <path
+        android:pathData="M9,16.17L4.83,12l-1.42,1.41L9,19 21,7l-1.41,-1.41z"
+        android:fillColor="@color/rt_primary"/>  <!-- 红色对勾 -->
+</vector>

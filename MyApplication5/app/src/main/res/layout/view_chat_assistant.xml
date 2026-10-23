@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ChatAssistantView 内部布局
+  =================================================
+  上下结构：上半部分是消息列表（weight=1，可滚动），下半部分是输入栏。
+  整个组件被外层用 <com.example.myapplication.view.ChatAssistantView/> 嵌入时，
+  width/height 应当是 match_parent / match_parent（或固定高度）。
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <!-- 消息区：消息列表 + 开场引导（引导只在列表为空时可见，叠在列表上层） -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_chat_messages"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingStart="@dimen/chat_list_padding"
+            android:paddingEnd="@dimen/chat_list_padding"
+            android:paddingTop="@dimen/chat_list_padding"
+            android:paddingBottom="@dimen/chat_list_padding"
+            android:scrollbars="none"
+            tools:listitem="@layout/item_chat_message_ai" />
+
+        <include
+            android:id="@+id/ll_chat_welcome"
+            layout="@layout/view_chat_welcome"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center_horizontal" />
+    </FrameLayout>
+
+    <View
+        android:id="@+id/view_chat_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:background="@color/chat_divider" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/chat_background"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/chat_list_padding"
+        android:paddingTop="@dimen/space_10"
+        android:paddingEnd="@dimen/chat_list_padding"
+        android:paddingBottom="@dimen/space_10">
+
+        <EditText
+            android:id="@+id/et_chat_input"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chat_input"
+            android:hint="@string/chat_default_placeholder"
+            android:imeOptions="actionSend"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLines="4"
+            android:minHeight="@dimen/chat_input_height"
+            android:paddingStart="@dimen/chat_input_padding_h"
+            android:paddingEnd="@dimen/chat_input_padding_h"
+            android:textColor="@color/chat_text_ai"
+            android:textColorHint="@color/chat_input_hint"
+            android:textSize="@dimen/chat_text_size"
+            tools:ignore="Autofill,LabelFor" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_chat_send"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/chat_input_height"
+            android:layout_marginStart="@dimen/space_8"
+            android:backgroundTint="@color/chat_send_button"
+            android:enabled="false"
+            android:insetTop="@dimen/space_0"
+            android:insetBottom="@dimen/space_0"
+            android:minWidth="@dimen/chat_send_button_min_width"
+            android:paddingStart="@dimen/space_16"
+            android:paddingEnd="@dimen/space_16"
+            android:text="@string/chat_default_send"
+            android:textColor="@color/chat_send_text"
+            android:textSize="@dimen/text_body"
+            app:cornerRadius="@dimen/radius_xl"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+    </LinearLayout>
+</merge>

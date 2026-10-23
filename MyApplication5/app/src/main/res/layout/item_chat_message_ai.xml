@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AI 消息气泡（左对齐）：白底带描边，左上角小圆角作为"尾巴"指向 AI。
+  内部结构：
+    - 横向 LinearLayout：左侧 AI 头像 + 右侧消息主体
+    - 消息主体是 TextView，多行文本；状态副文字（"已中断"/"加载失败"）放在气泡下方
+    - 打字指示器（三个小圆点）覆盖在 TextView 之上，仅在 STREAMING 且 content 为空时显示
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/chat_message_gap"
+    android:gravity="start"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="top"
+        android:maxWidth="@dimen/chat_bubble_max_width">
+
+        <!-- AI 头像（用「发」字占位，避免外部资源依赖） -->
+        <TextView
+            android:id="@+id/tv_chat_avatar"
+            android:layout_width="@dimen/chat_avatar_size"
+            android:layout_height="@dimen/chat_avatar_size"
+            android:layout_marginTop="@dimen/space_2"
+            android:layout_marginEnd="@dimen/space_8"
+            android:background="@drawable/bg_chat_bubble_ai"
+            android:gravity="center"
+            android:text="发"
+            android:textColor="@color/chat_text_ai_muted"
+            android:textSize="@dimen/text_caption"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/tv_chat_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chat_bubble_ai"
+                android:maxWidth="@dimen/chat_bubble_max_width"
+                android:paddingStart="@dimen/chat_bubble_padding_h"
+                android:paddingEnd="@dimen/chat_bubble_padding_h"
+                android:paddingTop="@dimen/chat_bubble_padding_v"
+                android:paddingBottom="@dimen/chat_bubble_padding_v"
+                android:textColor="@color/chat_text_ai"
+                android:textSize="@dimen/chat_text_size"
+                android:lineSpacingExtra="@dimen/space_2"
+                tools:text="AI 回复示例" />
+
+            <!-- 打字指示器：仅在 STREAMING 且 content 为空时显示，三个小圆点交替动画 -->
+            <com.example.myapplication.view.ChatTypingIndicator
+                android:id="@+id/typing_indicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                tools:visibility="visible" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- 状态副文字：中断/错误 -->
+    <TextView
+        android:id="@+id/tv_chat_meta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/size_btn_sm"
+        android:layout_marginTop="@dimen/space_2"
+        android:background="@drawable/bg_chat_error"
+        android:paddingStart="@dimen/space_8"
+        android:paddingEnd="@dimen/space_8"
+        android:paddingTop="@dimen/space_2"
+        android:paddingBottom="@dimen/space_2"
+        android:textColor="@color/chat_error_text"
+        android:textSize="@dimen/chat_text_size_meta"
+        android:visibility="gone"
+        tools:text="加载失败，点击重试"
+        tools:visibility="visible" />
+
+    <!--
+      结构化附件容器：AI 消息回复里的"工具卡片"会按顺序 inflate 进来。
+      注意放在 AI 头像下方、状态副文字下方 —— 这样状态副文字的"点击重试"点击区域不会挡到卡片。
+    -->
+    <LinearLayout
+        android:id="@+id/chat_attachments_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/size_btn_sm"
+        android:layout_marginTop="@dimen/space_6"
+        android:orientation="vertical" />
+</LinearLayout>

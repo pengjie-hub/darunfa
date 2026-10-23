@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  聊天开场引导块（消息列表为空时显示，发出第一条消息后自动隐藏）。
+  =====================================================
+  分三层，对应"让人敢用 → 让人省事"的顺序：
+    1. 自报家门：小发是谁、能干什么；
+    2. 四个能力入口：找商品 / 比参数 / 查物流 / 准备下单，点一下就直接替用户把话说完；
+    3. 快捷问题：更具体的示例，降低"不知道该问什么"的门槛。
+
+  每个可点元素的 android:tag 就是点击后要发送的那句话
+  （由 ChatAssistantView 统一读取 tag 并发送，避免把文案逻辑写死在 Java 里）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/space_12"
+    android:paddingTop="@dimen/space_10"
+    android:paddingEnd="@dimen/space_12"
+    android:paddingBottom="@dimen/space_10">
+
+    <!-- 1. 自报家门 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="@dimen/size_btn_sm"
+            android:layout_height="@dimen/size_btn_sm"
+            android:background="@drawable/bg_assistant_fab"
+            android:gravity="center"
+            android:text="发"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_body"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_10"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="你好，我是小发"
+                android:textColor="@color/rt_text_primary"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:text="找商品 · 比参数 · 查物流 · 下单"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 2. 能力入口（2×2） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_14"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/btn_welcome_find"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="@dimen/size_btn_sm"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chat_welcome_pill"
+            android:gravity="center"
+            android:tag="我想买点零食，帮我推荐几款"
+            android:text="找商品"
+            android:textColor="@color/rt_primary"
+            android:textSize="@dimen/text_label" />
+
+        <TextView
+            android:id="@+id/btn_welcome_compare"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="@dimen/size_btn_sm"
+            android:layout_marginStart="@dimen/space_8"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chat_welcome_pill"
+            android:gravity="center"
+            android:tag="帮我对比两款商品的参数，哪个更划算"
+            android:text="比参数"
+            android:textColor="@color/rt_primary"
+            android:textSize="@dimen/text_label" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/btn_welcome_logistics"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="@dimen/size_btn_sm"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chat_welcome_pill"
+            android:gravity="center"
+            android:tag="帮我查一下我的订单物流"
+            android:text="查物流"
+            android:textColor="@color/rt_primary"
+            android:textSize="@dimen/text_label" />
+
+        <TextView
+            android:id="@+id/btn_welcome_order"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="@dimen/size_btn_sm"
+            android:layout_marginStart="@dimen/space_8"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chat_welcome_pill"
+            android:gravity="center"
+            android:tag="帮我把购物车下单"
+            android:text="准备下单"
+            android:textColor="@color/rt_primary"
+            android:textSize="@dimen/text_label" />
+    </LinearLayout>
+
+    <!-- 3. 快捷问题（窄屏可横向滚动，不挤压布局） -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_14"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btn_welcome_cart"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/space_32"
+                android:background="@drawable/bg_chat_welcome_chip"
+                android:gravity="center"
+                android:paddingStart="@dimen/space_12"
+                android:paddingEnd="@dimen/space_12"
+                android:tag="我的购物车里有什么"
+                android:text="购物车里有什么"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+
+            <TextView
+                android:id="@+id/btn_welcome_checkout"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/space_32"
+                android:layout_marginStart="@dimen/space_8"
+                android:background="@drawable/bg_chat_welcome_chip"
+                android:gravity="center"
+                android:paddingStart="@dimen/space_12"
+                android:paddingEnd="@dimen/space_12"
+                android:tag="帮我把购物车下单"
+                android:text="帮我把购物车下单"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+
+            <TextView
+                android:id="@+id/btn_welcome_track"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/space_32"
+                android:layout_marginStart="@dimen/space_8"
+                android:background="@drawable/bg_chat_welcome_chip"
+                android:gravity="center"
+                android:paddingStart="@dimen/space_12"
+                android:paddingEnd="@dimen/space_12"
+                android:tag="我的订单到哪了"
+                android:text="我的订单到哪了"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+        </LinearLayout>
+    </HorizontalScrollView>
+</LinearLayout>

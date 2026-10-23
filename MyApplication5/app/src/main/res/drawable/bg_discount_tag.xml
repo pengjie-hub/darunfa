@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 折扣标签背景（如「7.7折」）：品牌红底 + 小圆角 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/rt_primary"/>
+    <corners android:radius="@dimen/radius_sm"/>
+</shape>

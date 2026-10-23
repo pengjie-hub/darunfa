@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:usesCleartextTraffic="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication7">
+        <activity
+            android:name=".activity.RegisterActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.LoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.MyApplication7.FullScreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".activity.ProductDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.MainActivity"
+            android:exported="true" >
+
+
+        </activity>
+        <!-- 收银台：下单后必须经此页确认支付，订单才会进入「待发货」 -->
+        <activity
+            android:name=".activity.PayActivity"
+            android:exported="false" />
+        <!-- 我的余额：余额展示 + 充值 + 余额明细（收银台余额支付的充值入口） -->
+        <activity
+            android:name=".activity.WalletActivity"
+            android:exported="false"
+            android:parentActivityName=".activity.MainActivity" />
+        <activity
+            android:name=".activity.BannerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.MineFunctionActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AllReviewsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.ProfileEditActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.SearchActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.PromotionListActivity"
+            android:exported="false" />
+        <!-- 收货地址管理（增删改 + 设为默认），结算时收银台自动带出默认地址 -->
+        <activity
+            android:name=".activity.AddressListActivity"
+            android:exported="false" />
+        <!-- 我的优惠券（未使用 / 已使用 / 已过期） -->
+        <activity
+            android:name=".activity.MyCouponsActivity"
+            android:exported="false" />
+        <!-- 在线客服（AI 大模型自动应答 + 可转人工，后台客服管理页同一套会话） -->
+        <activity
+            android:name=".activity.CsChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+    </application>
+
+</manifest>

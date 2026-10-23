@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AssistantFab 的内容：只有一个居中的「发」字。
+  圆的背景 / 阴影由 AssistantFab 自己在代码里设置（setBackgroundResource + setElevation），
+  这样外部在 XML 里改 layout_* 就能直接定位，不必再套一层容器。
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.FrameLayout">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="@string/assistant_fab_text"
+        android:textColor="@color/rt_text_on_primary"
+        android:textSize="@dimen/text_subtitle"
+        android:textStyle="bold" />
+</merge>

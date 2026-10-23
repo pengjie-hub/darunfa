@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    android:foreground="?attr/selectableItemBackground" xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/size_thumb"
+    android:layout_height="@dimen/size_thumb"
+    android:layout_margin="@dimen/space_4">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/grid_item_image"
+            android:layout_width="@dimen/space_40"
+            android:layout_height="@dimen/space_40"
+            android:src="@drawable/ic_menu_1"
+            android:scaleType="centerCrop" />
+
+        <TextView
+            android:id="@+id/grid_item_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_6"
+            android:textColor="@color/rt_text_primary"
+            android:textSize="@dimen/text_label" />
+    </LinearLayout>
+
+    <!-- 订单数量角标 -->
+    <TextView
+        android:id="@+id/grid_item_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|top"
+        android:layout_marginEnd="@dimen/space_6"
+        android:layout_marginTop="@dimen/space_4"
+        android:background="@drawable/bg_badge"
+        android:gravity="center"
+        android:minWidth="@dimen/space_16"
+        android:minHeight="@dimen/space_16"
+        android:paddingStart="@dimen/space_4"
+        android:paddingEnd="@dimen/space_4"
+        android:textColor="@color/rt_primary"
+        android:textSize="@dimen/text_caption"
+        android:visibility="gone" />
+
+</FrameLayout>

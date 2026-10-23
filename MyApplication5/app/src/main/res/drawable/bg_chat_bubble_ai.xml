@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AI 消息气泡：白底 + 细描边，左上角圆角小一些作为"尾巴"指向 AI。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/chat_bubble_ai" />
+    <stroke android:width="@dimen/space_1" android:color="@color/chat_bubble_ai_stroke" />
+    <corners
+        android:topLeftRadius="@dimen/chat_bubble_radius_tail"
+        android:topRightRadius="@dimen/chat_bubble_radius"
+        android:bottomLeftRadius="@dimen/chat_bubble_radius"
+        android:bottomRightRadius="@dimen/chat_bubble_radius" />
+</shape>

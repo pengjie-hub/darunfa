@@ -1,0 +1,11 @@
+<!-- 送货到家图标 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/space_24"
+    android:height="@dimen/space_24"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorOnSurface">
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="M10,20v-6h4v6h5v-8h3L12,3L2,12h3v8H10z M7.43,10.57L12,6l4.57,4.57L16,10L12,6l-4,4L7.43,10.57z" />
+</vector>

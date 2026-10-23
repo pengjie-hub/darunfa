@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  「小发」悬浮球背景：品牌红实心圆 + 白色描边（描边让球在深色商品图上也分得清轮廓）。
+  阴影不在这里画，交给 AssistantFab 的 elevation。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/rt_primary" />
+    <stroke
+        android:width="@dimen/space_2"
+        android:color="@color/rt_text_on_primary" />
+</shape>

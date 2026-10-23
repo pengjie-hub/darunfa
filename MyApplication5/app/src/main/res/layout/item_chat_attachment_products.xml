@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AI 助手：找商品结果卡片
+  =====================================================
+  一个白色圆角卡，标题 + 横向滚动商品列表。
+  每项 100dp 宽：图片占位 + 名称（最多 2 行）+ 价 + 库存/销量。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_8"
+    android:background="@drawable/bg_chat_attachment_card"
+    android:orientation="vertical"
+    android:padding="@dimen/space_10">
+
+    <TextView
+        android:id="@+id/tv_chat_card_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="为你找到以下商品"
+        android:textColor="@color/chat_text_ai"
+        android:textSize="@dimen/chat_text_size_meta"
+        android:textStyle="bold" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/ll_chat_products_row"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
+</LinearLayout>

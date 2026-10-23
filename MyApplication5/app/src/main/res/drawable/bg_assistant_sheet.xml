@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  半屏助手面板的背景：只有上方两个角是圆的。
+  为什么要自己画：BottomSheetDialog 默认给 design_bottom_sheet 的圆角background
+  不一定能盖住我们自己的内容层，直接让内容层自带圆角最稳，不依赖父容器的裁剪。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners
+        android:topLeftRadius="@dimen/radius_lg"
+        android:topRightRadius="@dimen/radius_lg" />
+    <solid android:color="@color/rt_surface" />
+</shape>

@@ -1,0 +1,78 @@
+%% ============ ① 余额支付 ============
+sequenceDiagram
+    autonumber
+    participant App as PayActivity
+    participant OC as OrderController
+    participant OS as OrderService
+    participant WS as WalletService
+    participant UR as UserRepository
+    participant PR as PaymentRepository
+
+    App->>OC: PUT /api/orders/{id}/pay  {method:"BALANCE"}
+    OC->>OS: pay(userId, orderId, BALANCE)
+    Note over OS: @Transactional 开启
+    OS->>OS: getOwned + requireStatus(PENDING_PAYMENT)
+    OS->>WS: payOrder(userId, orderId, payAmount)
+    WS->>UR: findByIdForUpdate(userId)  (SELECT ... FOR UPDATE)
+    UR-->>WS: user(balance)
+    alt balance < amount
+        WS-->>OS: throw BusinessException(400,"余额不足")
+        OS-->>OC: 异常 → 事务回滚
+        OC-->>App: HTTP200 {code:400,"余额不足..."}
+    else 余额充足
+        WS->>WS: balance -= amount
+        WS->>WS: record(type=PAY, amount=-amt, bizNo=ORDER-{id}-PAY, balanceAfter)
+        WS-->>OS: ok
+        OS->>OS: order.status=PAID, paidAt=now
+        OS->>PR: save(payment{method=BALANCE,status=SUCCESS})
+        Note over OS: 事务提交（余额/流水/订单/支付一起落库）
+        OS-->>OC: OrderDTO
+        OC-->>App: HTTP200 {code:0,data:...}
+    end
+
+%% ============ ② 退款通过返现到余额 ============
+sequenceDiagram
+    autonumber
+    participant AD as AdminController
+    participant RS as RefundService
+    participant WS as WalletService
+    participant PR as PaymentRepository
+    participant UR as UserRepository
+
+    AD->>RS: approve(operatorId, refundId)
+    Note over RS: @Transactional 开启
+    RS->>RS: getPending(refundId) 校验 PENDING
+    RS->>RS: restock(items)
+    RS->>RS: releaseCoupon(...)
+    RS->>WS: refundOrderToBalance(orderId, userId)
+    WS->>PR: sum(amount) where method=BALANCE and status=SUCCESS
+    alt 返现额 > 0
+        WS->>UR: findByIdForUpdate(userId)
+        WS->>WS: balance += refund; record(type=REFUND, bizNo=ORDER-{id}-REFUND)
+    end
+    WS-->>RS: 返现额
+    RS->>PR: SUCCESS 流水 → REFUNDED
+    RS->>RS: order.status=REFUNDED
+    Note over RS: 事务提交
+
+%% ============ ③ 充值 ============
+sequenceDiagram
+    autonumber
+    participant App as WalletActivity
+    participant WC as WalletController
+    participant WS as WalletService
+    participant BR as BalanceTransactionRepository
+    participant UR as UserRepository
+
+    App->>WC: POST /api/wallet/recharge {amount, requestId}
+    WC->>WS: recharge(userId, amount, requestId)
+    Note over WS: @Transactional 开启
+    WS->>WS: 校验 amount(>0, ≤上限, scale≤2)
+    WS->>UR: lockUser(userId)  (SELECT ... FOR UPDATE 先锁)
+    WS->>BR: existsByBizNo("RECHARGE-{requestId}")
+    alt 已存在
+        BR-->>WS: 命中 → 不入账，返回当前钱包
+    else 首次
+        WS->>WS: balance += amount; record(RECHARGE, balanceAfter, bizNo)
+        WS-->>App: WalletDTO{balance,...}
+    end

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  满减类促销 · 无配图时的占位横幅
+  设计：主体红色渐变 + 右上柔光圆 + 左下小圆，形成有层次的促销底色，
+       避免纯色块显得单薄（角标文字由 item_promotion 负责叠加）。
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 底色：135° 红色渐变（亮 → 深，形成左上到右下的光感） -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:startColor="@color/rt_primary_bright"
+                android:centerColor="@color/rt_primary"
+                android:endColor="@color/rt_primary_deep"
+                android:angle="135" />
+        </shape>
+    </item>
+
+    <!-- 右上角柔光圆（白色 12% 透明），制造高光 -->
+    <item
+        android:width="@dimen/size_118"
+        android:height="@dimen/size_118"
+        android:gravity="top|end"
+        android:top="-30dp"
+        android:right="-26dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/rt_white_12" />
+        </shape>
+    </item>
+
+    <!-- 左下角小圆（白色 8% 透明），平衡构图 -->
+    <item
+        android:width="@dimen/size_68"
+        android:height="@dimen/size_68"
+        android:gravity="bottom|start"
+        android:bottom="-28dp"
+        android:left="-16dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/rt_white_08" />
+        </shape>
+    </item>
+</layer-list>

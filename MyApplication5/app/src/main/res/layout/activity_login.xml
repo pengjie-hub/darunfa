@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/login_bg"
+    tools:context=".activity.LoginActivity">
+
+    <!-- 顶部暗色遮罩，保证文字可读 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/rt_scrim" />
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:navigationIcon="@drawable/baseline_arrow_back_24"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="欢迎来到大润发"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <!-- 品牌 Logo 区 -->
+    <LinearLayout
+        android:id="@+id/ll_brand"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/size_thumb"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar">
+
+        <ImageView
+            android:id="@+id/iv_brand_logo"
+            android:layout_width="@dimen/size_90"
+            android:layout_height="@dimen/size_thumb"
+            android:layout_marginBottom="@dimen/space_16"
+            android:contentDescription="大润发Logo"
+            android:scaleType="fitCenter"
+            android:src="@drawable/darunfa_icon" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="大润发"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_heading"
+            android:textStyle="bold"
+            android:shadowColor="@color/rt_shadow"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="3" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:text="新鲜、便宜、舒适、便利"
+            android:textColor="@color/rt_text_on_primary_muted"
+            android:textSize="@dimen/text_label"
+            android:shadowColor="@color/rt_shadow"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2" />
+    </LinearLayout>
+
+    <!-- 登录卡片 -->
+    <LinearLayout
+        android:id="@+id/ll_login_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_24"
+        android:layout_marginTop="@dimen/space_28"
+        android:layout_marginEnd="@dimen/space_24"
+        android:background="@drawable/bg_ll"
+        android:orientation="vertical"
+        android:padding="@dimen/space_24"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ll_brand">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/space_20"
+            android:text="账号登录"
+            android:textColor="@color/rt_primary"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+
+        <!-- 账号输入框 -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="用户名"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusBottomEnd="@dimen/radius_md"
+            app:boxCornerRadiusBottomStart="@dimen/radius_md"
+            app:boxCornerRadiusTopEnd="@dimen/radius_md"
+            app:boxCornerRadiusTopStart="@dimen/radius_md"
+            app:boxStrokeColor="@color/rt_border"
+            app:errorEnabled="true">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_username"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:maxLength="20"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:hint="密码"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusBottomEnd="@dimen/radius_md"
+            app:boxCornerRadiusBottomStart="@dimen/radius_md"
+            app:boxCornerRadiusTopEnd="@dimen/radius_md"
+            app:boxCornerRadiusTopStart="@dimen/radius_md"
+            app:boxStrokeColor="@color/rt_border"
+            app:errorEnabled="true"
+            app:passwordToggleEnabled="true">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:maxLength="20"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <CheckBox
+            android:id="@+id/remember_password"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:buttonTint="@color/rt_primary"
+            android:text="记住登录状态"
+            android:textColor="@color/rt_text_secondary"
+            android:textSize="@dimen/text_label" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/login_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_16"
+            android:padding="@dimen/space_12"
+            android:text="登 录"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_subtitle"
+            android:textStyle="bold"
+            app:backgroundTint="@color/rt_primary"
+            app:cornerRadius="@dimen/radius_md" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_16"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="还没有账号？"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+
+            <TextView
+                android:id="@+id/tv_to_register"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/space_4"
+                android:text="立即注册"
+                android:textColor="@color/rt_primary"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

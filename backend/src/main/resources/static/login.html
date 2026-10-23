@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 大润发电商管理系统</title>
+    <link rel="stylesheet" href="admin-theme.css?v=4">
+</head>
+<body class="login-body">
+    <div class="login-card">
+        <div class="logo">
+            <div class="mark">润</div>
+            <h1>大润发电商管理系统</h1>
+            <p>账号登录</p>
+        </div>
+        <form id="loginForm">
+            <div class="field">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" placeholder="请输入用户名" autocomplete="username" autofocus required>
+            </div>
+            <div class="field">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" placeholder="请输入密码" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn primary" id="submitBtn">登 录</button>
+            <div class="error" id="errorBox"></div>
+        </form>
+        <div class="tip">演示管理员账号：admin / admin123（登录后进入运营后台）</div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorBox = document.getElementById('errorBox');
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            errorBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = '登录中...';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            try {
+                const resp = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const json = await resp.json();
+
+                if (json.code === 0 && json.data && json.data.token) {
+                    localStorage.setItem('token', json.data.token);
+                    localStorage.setItem('user', JSON.stringify(json.data.user));
+                    window.location.href = '/admin.html';
+                } else {
+                    showError(json.message || '登录失败，请检查用户名或密码');
+                }
+            } catch (err) {
+                showError('无法连接后端服务，请确认后端已启动');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '登 录';
+            }
+        });
+
+        function showError(msg) {
+            errorBox.textContent = msg;
+            errorBox.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

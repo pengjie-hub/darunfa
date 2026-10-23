@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 平板（sw600dp）下的尺寸覆盖：气泡更宽、留白更大，更接近桌面端体验。 -->
+<resources>
+    <dimen name="chat_bubble_max_width">480dp</dimen>
+    <dimen name="chat_list_padding">20dp</dimen>
+    <dimen name="chat_text_size">16sp</dimen>
+</resources>

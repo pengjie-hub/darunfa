@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  促销活动卡片（横向滑动列表项）
+  结构：配图区(80dp) + 文字区(标题/描述/查看详情)
+  配图为空时由 Adapter 换成渐变占位，遮罩层保证角标文字在任意图片上可读。
+
+  高度：约 205dp（配图 80 + 文字区 125）。
+        标题/描述保留 minLines=2 是为了让横滑时各卡片底部对齐；
+        因为文案本身多为两行，实际几乎不产生额外留白。
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_promo"
+    android:layout_width="@dimen/size_248"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/space_12"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/rt_surface"
+    app:cardCornerRadius="@dimen/radius_md"
+    app:cardElevation="@dimen/elevation_sm"
+    app:rippleColor="@color/rt_ripple">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- ===== 配图区（80dp：够表达活动视觉，又不抢首页正文的高度） ===== -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/size_thumb">
+
+            <ImageView
+                android:id="@+id/iv_promo_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="促销活动配图" />
+
+            <!-- 底部遮罩：保证白色角标文字可读 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_promo_scrim" />
+
+            <!-- 左上角：促销类型标签(满减/折扣) -->
+            <TextView
+                android:id="@+id/tv_promo_type"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:layout_margin="@dimen/space_8"
+                android:background="@drawable/bg_promo_type_tag"
+                android:paddingStart="@dimen/space_6"
+                android:paddingEnd="@dimen/space_6"
+                android:paddingTop="@dimen/space_1"
+                android:paddingBottom="@dimen/space_1"
+                android:text="满减"
+                android:textColor="@color/rt_primary"
+                android:textSize="@dimen/text_caption"
+                android:textStyle="bold" />
+
+            <!-- 左下角：优惠角标(如「满 ¥100 减 ¥20」) -->
+            <TextView
+                android:id="@+id/tv_promo_tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="@dimen/space_10"
+                android:layout_marginBottom="@dimen/space_6"
+                android:layout_marginEnd="@dimen/space_10"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:shadowColor="@color/rt_shadow_soft"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="3"
+                android:text="满 ¥100 减 ¥20"
+                android:textColor="@color/rt_text_on_primary"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <!-- ===== 文字区 ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_10">
+
+            <TextView
+                android:id="@+id/tv_promo_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:minLines="2"
+                android:text="满 100 减 10（全场通用）"
+                android:textColor="@color/rt_text_primary"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_promo_desc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:minLines="2"
+                android:text="单笔消费满 ¥100 元，立减 ¥10 元"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/space_1"
+                android:layout_marginTop="@dimen/space_8"
+                android:background="@color/rt_divider" />
+
+            <TextView
+                android:id="@+id/tv_promo_action"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="@dimen/space_6"
+                android:paddingStart="@dimen/space_6"
+                android:paddingEnd="@dimen/space_2"
+                android:paddingTop="@dimen/space_1"
+                android:paddingBottom="@dimen/space_1"
+                android:text="查看详情 &gt;"
+                android:textColor="@color/rt_primary"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

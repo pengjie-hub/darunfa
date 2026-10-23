@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 「默认」小标签底：品牌红圆角 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/rt_primary" />
+    <corners android:radius="@dimen/radius_sm" />
+</shape>

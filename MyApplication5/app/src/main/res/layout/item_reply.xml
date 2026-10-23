@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:foreground="?attr/selectableItemBackground" xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:layout_marginTop="@dimen/space_8"
+    android:paddingStart="@dimen/space_8">
+
+    <!-- 左侧竖线 -->
+    <View
+        android:layout_width="@dimen/space_4"
+        android:layout_height="match_parent"
+        android:background="@color/rt_border"
+        android:layout_marginTop="@dimen/space_2" />
+
+    <LinearLayout
+        android:layout_width="@dimen/space_0"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="@dimen/space_10"
+        android:background="@color/rt_surface_variant"
+        android:padding="@dimen/space_10">
+
+        <!-- 追评头部: 用户名 + 时间 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_reply_tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="追评"
+                android:textColor="@color/rt_tag_highlight"
+                android:textSize="@dimen/text_caption"
+                android:textStyle="bold"
+                android:background="@color/rt_tag_highlight_surface"
+                android:paddingStart="@dimen/space_6"
+                android:paddingEnd="@dimen/space_6"
+                android:paddingTop="@dimen/space_2"
+                android:paddingBottom="@dimen/space_2" />
+
+
+            <TextView
+                android:id="@+id/tv_reply_user"
+                android:layout_width="@dimen/space_0"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_8"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label"
+                android:text="用户名" />
+
+            <TextView
+                android:id="@+id/tv_reply_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_caption"
+                android:text="2026-09-01" />
+        </LinearLayout>
+
+        <!-- 追评内容 -->
+        <TextView
+            android:id="@+id/tv_reply_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/rt_text_secondary"
+            android:textSize="@dimen/text_label"
+            android:lineSpacingExtra="@dimen/space_2"
+            android:text="追评内容" />
+    </LinearLayout>
+</LinearLayout>

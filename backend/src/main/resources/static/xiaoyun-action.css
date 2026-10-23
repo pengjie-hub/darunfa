@@ -1,0 +1,483 @@
+/* ============================================================================
+ * 小运 · 操作确认卡片样式
+ * ============================================================================
+ * 作用域：全部 .xy- 前缀，绝不碰 admin-theme.css 里已有的任何选择器。
+ * 主题：只用 admin-theme.css :root 里已定义的语义变量（--card/--border-*/--text-*/
+ *       --brand-*/--success-*/--error-*/--radius*/--shadow*），因此跟随主题走，
+ *       不需要在 admin-theme.css 里加任何东西（也就不需要 bump 缓存串）。
+ * 尺寸：卡片宽度受 .ai-msg 的 max-width 约束（父容器 #aiMessages 内），
+ *       这里统一 width:100% + box-sizing，窄屏（<520px）退化时不横向溢出。
+ *
+ * 为什么不复用 .ai-msg：小运的普通答复是「一段话」，卡片是「一块结构化面板」，
+ * 两者的 padding/背景/对齐都不同。混用同一个 class 会让后续调 AI 气泡样式时
+ * 顺手把卡片也改坏（历史上就是这么坏的），所以彻底分开。
+ * ==========================================================================*/
+
+/* ── 卡片外壳 ───────────────────────────────────────────────────────────── */
+.xy-card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 10px 0 2px;
+    padding: 14px 16px 12px;
+    background: var(--card, #fff);
+    border: 1px solid var(--border-200, #e3e0d4);
+    border-left: 3px solid var(--text-400, #9b988c);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, .05));
+    color: var(--foreground, #3d3929);
+    font-size: 13px;
+    line-height: 1.6;
+    text-align: left;
+    word-break: break-word;
+}
+
+/* 四态在外壳上留一条色带，运营扫一眼就知道这张卡片处在哪一步 */
+.xy-card[data-state="proposed"] { border-left-color: var(--text-400, #9b988c); }
+.xy-card[data-state="running"]  { border-left-color: var(--brand-500, #DE1313); }
+.xy-card[data-state="success"]  { border-left-color: var(--success-500, #2E7D32); }
+.xy-card[data-state="failed"]   { border-left-color: var(--error-500, #DE1313); }
+
+/* ── 头部 ──────────────────────────────────────────────────────────────── */
+.xy-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.xy-head-main {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+.xy-title {
+    font-family: var(--font-serif, inherit);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--popover-foreground, #28261b);
+}
+
+/* 状态徽标：待确认 / 执行中 / 已完成 / 未完成 */
+.xy-state-chip {
+    flex: 0 0 auto;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    background: var(--bg-300, #ede9de);
+    color: var(--text-600, #535146);
+    white-space: nowrap;
+}
+
+.xy-state-proposed { background: var(--bg-300, #ede9de); color: var(--text-600, #535146); }
+.xy-state-running  { background: var(--brand-100, #FDE0E0); color: var(--brand-700, #931512); }
+.xy-state-success  { background: var(--success-100, #e7ecdd); color: var(--success-700, #4f5d3a); }
+.xy-state-failed   { background: var(--error-100, #f7dedb); color: var(--error-700, #962c2c); }
+
+/* 风险徽标 */
+.xy-risk-badge {
+    flex: 0 0 auto;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    white-space: nowrap;
+}
+
+.xy-risk-low    { background: var(--success-100, #e7ecdd); color: var(--success-700, #4f5d3a); }
+.xy-risk-medium { background: #fdf0d8; color: #8a5a00; }
+.xy-risk-high   { background: var(--error-100, #f7dedb); color: var(--error-700, #962c2c); }
+
+/* ── 操作对象 ──────────────────────────────────────────────────────────── */
+.xy-target {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--border-200, #e3e0d4);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-700, #46443b);
+}
+
+/* ── 字段表（label / value） ───────────────────────────────────────────── */
+/*
+ * 第二列必须是 minmax(0, 1fr) 而不是 1fr：
+ * Grid 的 1fr 隐式下限是 min-width:auto，也就是「内容最小不可断行宽度」。
+ * 服务端 field.value 里可能是「同意后：回补库存、返还优惠券、支付流水置 REFUNDED，不可撤销」
+ * 这种长句，中间夹着 REFUNDED 这样的长英文词 —— 它把整列撑宽，卡片就横向溢出，
+ * 右侧内容被裁掉（实测截图里「（仅提示）」就是被这么切掉的）。
+ * minmax(0, 1fr) + 子项 min-width:0 才能让 overflow-wrap 真正生效。
+ */
+.xy-fields,
+.xy-result-fields {
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(64px, max-content) minmax(0, 1fr);
+    gap: 4px 12px;
+}
+
+.xy-field {
+    display: contents; /* 让 dt/dd 直接落进上面的 grid，行行对齐 */
+}
+
+.xy-field-label {
+    margin: 0;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted-foreground, #6e6d68);
+    white-space: nowrap;
+}
+
+.xy-field-value {
+    margin: 0;
+    min-width: 0; /* 同上：不加就会被长串撑破栅格 */
+    font-size: 12.5px;
+    color: var(--card-foreground, #28261b);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* tone 来自服务端（fields[].tone），只做配色映射，不改文案 */
+.xy-tone-danger  { color: var(--error-600, #B71C1C); font-weight: 600; }
+.xy-tone-warn    { color: #8a5a00; font-weight: 600; }
+.xy-tone-success { color: var(--success-600, #647649); font-weight: 600; }
+.xy-tone-muted   { color: var(--muted-foreground, #6e6d68); }
+.xy-tone-normal  { color: var(--card-foreground, #28261b); }
+
+/* 订单号/运单号这类需要人工核对的串：等宽 + 可选中 */
+.xy-mono {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+    letter-spacing: .2px;
+    user-select: all;
+}
+
+/* ── 预检 ──────────────────────────────────────────────────────────────── */
+.xy-section-label {
+    margin: 12px 0 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .4px;
+    color: var(--muted-foreground, #6e6d68);
+}
+
+.xy-checks {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.xy-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.xy-check-mark {
+    flex: 0 0 auto;
+    width: 13px;
+    font-weight: 700;
+    line-height: 1.6;
+}
+
+.xy-check-ok  .xy-check-mark { color: var(--success-600, #647649); }
+.xy-check-bad .xy-check-mark { color: var(--error-600, #B71C1C); }
+.xy-check-ok  .xy-check-text { color: var(--text-600, #535146); }
+.xy-check-bad .xy-check-text { color: var(--error-700, #962c2c); }
+
+/* ── 风险区 ────────────────────────────────────────────────────────────── */
+.xy-risk {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-200, #f5f4ef);
+}
+
+.xy-risk-reasons {
+    margin: 0;
+    padding-left: 16px;
+    font-size: 12px;
+    color: var(--text-700, #46443b);
+}
+
+.xy-risk-note {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted-foreground, #6e6d68);
+}
+
+.xy-risk-irreversible {
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--error-600, #B71C1C);
+}
+
+/* 二次确认勾选（金额大 / 补货量大 / 折扣低时才出现） */
+.xy-second-confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-800, #3d3929);
+    cursor: pointer;
+    user-select: none;
+}
+
+.xy-second-confirm input {
+    flex: 0 0 auto;
+    margin: 2px 0 0;
+    width: 14px;
+    height: 14px;
+    accent-color: var(--brand-500, #DE1313);
+    cursor: pointer;
+}
+
+/* ── 结果区 ────────────────────────────────────────────────────────────── */
+.xy-result {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-md, 8px);
+    font-size: 12px;
+}
+
+.xy-result-running {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--brand-50, #FEF3F3);
+    color: var(--brand-700, #931512);
+}
+
+.xy-result-ok {
+    background: var(--success-50, #f0f3ea);
+    color: var(--success-700, #4f5d3a);
+}
+
+/* 幂等命中（DUPLICATE_ACTION）：同样是绿色成功态，只是标题与配色略作区分 */
+.xy-result-dup {
+    background: var(--bg-200, #f5f4ef);
+    color: var(--text-700, #46443b);
+}
+
+.xy-result-bad {
+    background: var(--error-50, #FFEBEE);
+    color: var(--error-700, #962c2c);
+}
+
+.xy-result-title {
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.xy-result-msg {
+    margin-top: 3px;
+    font-size: 12px;
+    font-weight: 400;
+    color: inherit;
+}
+
+.xy-result-code {
+    margin-top: 4px;
+    font-family: var(--font-mono, ui-monospace, Menlo, Consolas, monospace);
+    font-size: 11px;
+    opacity: .75;
+}
+
+.xy-result-fields {
+    margin-top: 6px;
+}
+
+.xy-result-fields .xy-field-value {
+    color: inherit;
+}
+
+.xy-result-actions {
+    margin-top: 8px;
+}
+
+.xy-result-hint {
+    font-size: 12px;
+    opacity: .85;
+}
+
+/* 执行中的转圈：纯 CSS，不引图标库 */
+.xy-spinner {
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--brand-200, #FBC5C5);
+    border-top-color: var(--brand-500, #DE1313);
+    border-radius: 50%;
+    animation: xy-spin .8s linear infinite;
+}
+
+@keyframes xy-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 无障碍：系统要求减少动效时停掉转圈（改成呼吸） */
+@media (prefers-reduced-motion: reduce) {
+    .xy-spinner { animation: xy-pulse 1.4s ease-in-out infinite; }
+    @keyframes xy-pulse { 50% { opacity: .4; } }
+}
+
+/* ── 按钮 ──────────────────────────────────────────────────────────────── */
+.xy-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.xy-btn {
+    padding: 6px 14px;
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid var(--border-300, #dad9d4);
+    background: var(--card, #fff);
+    color: var(--text-800, #3d3929);
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, opacity .15s;
+}
+
+.xy-btn:hover:not(:disabled) {
+    background: var(--bg-200, #f5f4ef);
+    border-color: var(--border-400, #cdcabf);
+}
+
+.xy-btn:active:not(:disabled) { transform: translateY(1px); }
+
+/* 禁用态必须「看起来就不能点」，否则运营会以为按钮坏了而反复戳 */
+.xy-btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.xy-btn-primary {
+    background: var(--primary, #DE1313);
+    border-color: var(--primary, #DE1313);
+    color: var(--primary-foreground, #fff);
+}
+
+.xy-btn-primary:hover:not(:disabled) {
+    background: var(--brand-600, #B71C1C);
+    border-color: var(--brand-600, #B71C1C);
+}
+
+.xy-btn-primary:active:not(:disabled) { background: var(--brand-700, #931512); }
+
+.xy-btn-ghost {
+    background: transparent;
+    color: var(--text-600, #535146);
+}
+
+.xy-btn-sm {
+    padding: 3px 10px;
+    font-size: 12px;
+}
+
+/* ── 页脚（有效期） ────────────────────────────────────────────────────── */
+.xy-foot {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted-foreground, #6e6d68);
+}
+
+/* ── 追问选项 ──────────────────────────────────────────────────────────── */
+.xy-options {
+    margin: 8px 0 2px;
+}
+
+.xy-options-label {
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: var(--muted-foreground, #6e6d68);
+}
+
+.xy-options-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.xy-option {
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-300, #dad9d4);
+    background: var(--card, #fff);
+    color: var(--text-700, #46443b);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+}
+
+.xy-option:hover {
+    background: var(--primary, #DE1313);
+    border-color: var(--primary, #DE1313);
+    color: var(--primary-foreground, #fff);
+}
+
+/* ── 窄屏 ──────────────────────────────────────────────────────────────── */
+@media (max-width: 520px) {
+    .xy-card { padding: 12px 12px 10px; font-size: 12.5px; }
+    .xy-fields,
+    .xy-result-fields { grid-template-columns: 1fr; gap: 2px; }
+    .xy-field { display: block; margin-bottom: 4px; }
+    .xy-field-label { margin-bottom: 1px; }
+    .xy-actions .xy-btn { flex: 1 1 auto; }
+}
+
+/* ============================================================================
+ * 常驻「待确认操作」区块（小运消息流顶部）
+ * ============================================================================
+ * #aiMessages 是 flex 纵向容器且 align-items:flex-start，因此区块必须
+ * align-self:stretch + width:100% 才能占满整行；卡片本身沿用 .xy-card，
+ * 这里只负责「区块外壳 + 标题 + 计数」三件小事。
+ * ==========================================================================*/
+.xy-pending {
+    align-self: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 2px;
+}
+
+.xy-pending-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 0 4px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-700, #46443b);
+}
+
+.xy-pending-count {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--brand-100, #FDE0E0);
+    color: var(--brand-700, #931512);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+}
+
+.xy-pending-list {
+    display: block;
+    width: 100%;
+}

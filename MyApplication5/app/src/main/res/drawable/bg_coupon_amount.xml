@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 券面左侧「优惠额」底：浅红块 + 左侧圆角，与 item 卡片 12dp 圆角对齐 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/rt_hot_tag_surface" />
+    <corners
+        android:topLeftRadius="@dimen/radius_md"
+        android:bottomLeftRadius="@dimen/radius_md" />
+</shape>

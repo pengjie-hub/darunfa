@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rt_background"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/rt_background">
+
+        <!-- 顶部工具栏 -->
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/rt_primary"
+            android:elevation="@dimen/elevation_flat"
+            tools:ignore="MissingConstraints">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tv_cart_title"
+                    android:layout_width="@dimen/space_0"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="购物车"
+                    android:textSize="@dimen/text_title"
+                    android:textColor="@color/rt_text_on_primary"
+                    android:textStyle="bold"
+                    android:paddingStart="@dimen/space_0"
+                    android:paddingEnd="@dimen/space_10" />
+
+                <TextView
+                    android:id="@+id/tv_edit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="编辑"
+                    android:textColor="@color/rt_text_on_primary"
+                    android:textSize="@dimen/text_body"
+                    android:padding="@dimen/space_8"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_marginEnd="@dimen/space_10" />
+            </LinearLayout>
+        </androidx.appcompat.widget.Toolbar>
+
+        <!-- 空购物车提示 -->
+        <LinearLayout
+            android:id="@+id/empty_car_layout"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/space_0"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/iv_empty_cart"
+                android:layout_width="@dimen/size_120"
+                android:layout_height="@dimen/size_120"
+                android:src="@drawable/ic_shopping_cart_24"
+                android:tint="@color/rt_text_hint"
+                android:alpha="0.5"
+                android:contentDescription="空购物车" />
+
+            <TextView
+                android:id="@+id/tv_empty_cart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="购物车是空的，快去挑选心仪的商品吧~"
+                android:textSize="@dimen/text_body"
+                android:textColor="@color/rt_text_secondary"
+                android:layout_marginTop="@dimen/space_14"
+                android:gravity="center" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_go_shopping"
+                android:layout_width="@dimen/size_160"
+                android:layout_height="@dimen/size_touch"
+                android:text="去购物"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:layout_marginTop="@dimen/space_24"
+                app:backgroundTint="@color/rt_primary"
+                android:textColor="@color/rt_text_on_primary"
+                app:cornerRadius="@dimen/radius_xl"
+                android:elevation="@dimen/elevation_sm" />
+        </LinearLayout>
+
+        <!-- 购物车商品列表 -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_car_items"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_12"
+            android:layout_marginEnd="@dimen/space_12"
+            android:layout_marginTop="@dimen/space_12"
+            android:layout_marginBottom="@dimen/space_12"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="@dimen/space_12"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager">
+
+        </androidx.recyclerview.widget.RecyclerView>
+
+        <!-- 底部结算栏。
+             竖向两层：上层是「优惠提示」独立一行，下层是原来的 全选/合计/结算。
+             优惠提示不能塞进中间那列 —— 那列高度被 48dp 的结算按钮锁住，第三行会被压成一条缝。 -->
+        <LinearLayout
+            android:id="@+id/bottom_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/rt_surface"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/space_16"
+            android:paddingVertical="@dimen/space_12"
+            android:elevation="@dimen/elevation_lg">
+
+            <!-- 优惠提示：已享优惠显示「已享「活动」立减 ¥x，应付 ¥y」，
+                 未达门槛显示「再买 ¥x 可享…」。文案由后端试算接口给出，前端不自己算。 -->
+            <TextView
+                android:id="@+id/tv_promo_hint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_8"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/rt_primary"
+                android:textSize="@dimen/text_label"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <CheckBox
+                    android:id="@+id/cb_select_all"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="全选"
+                    android:textSize="@dimen/text_body"
+                    android:textColor="@color/rt_text_primary"
+                    android:buttonTint="@color/rt_primary" />
+
+                <View
+                    android:layout_width="@dimen/space_1"
+                    android:layout_height="@dimen/size_btn_sm"
+                    android:background="@color/rt_divider"
+                    android:layout_marginStart="@dimen/space_12"
+                    android:layout_marginEnd="@dimen/space_12" />
+
+                <LinearLayout
+                    android:layout_width="@dimen/space_0"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center_vertical|end"
+                    android:layout_marginEnd="@dimen/space_12">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="合计:"
+                            android:textSize="@dimen/text_label"
+                            android:textColor="@color/rt_text_secondary" />
+                        <TextView
+                            android:id="@+id/tv_total_price"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="¥0"
+                            android:textSize="@dimen/text_title"
+                            android:textColor="@color/rt_accent"
+                            android:textStyle="bold"
+                            android:layout_marginStart="@dimen/space_4" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_selected_hint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="已选 0 件"
+                        android:textSize="@dimen/text_caption"
+                        android:textColor="@color/rt_text_hint"
+                        android:layout_marginTop="@dimen/space_2" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_settlement"
+                    android:layout_width="@dimen/space_0"
+                    android:layout_weight="1"
+                    android:layout_height="@dimen/size_touch"
+                    app:backgroundTint="@color/rt_primary"
+                    android:text="结算"
+                    android:textSize="@dimen/text_body"
+                    android:textStyle="bold"
+                    android:textColor="@color/rt_text_on_primary"
+                    android:elevation="@dimen/elevation_sm"
+                    android:stateListAnimator="@null"
+                    app:cornerRadius="@dimen/radius_xl" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

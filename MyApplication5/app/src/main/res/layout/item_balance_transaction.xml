@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  余额流水列表项（item_balance_transaction）
+  左：变动类型（如「余额支付」）+ 备注 + 时间；右：有符号金额。
+  金额配色按中文习惯：入账（+）用主色红，出账（-）用深灰——不用绿色表示减少。
+  颜色由适配器按金额正负设置（见 WalletActivity.TransactionAdapter）。
+-->
+<LinearLayout
+    android:foreground="?attr/selectableItemBackground" xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/space_12"
+    android:layout_marginEnd="@dimen/space_12"
+    android:layout_marginBottom="@dimen/space_10"
+    android:background="@drawable/bg_section_card"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="@dimen/space_14"
+    android:paddingEnd="@dimen/space_14"
+    android:paddingTop="@dimen/space_12"
+    android:paddingBottom="@dimen/space_12">
+
+    <LinearLayout
+        android:layout_width="@dimen/space_0"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_tx_type_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/rt_text_primary"
+            android:textSize="@dimen/text_body"
+            android:textStyle="bold"
+            tools:text="余额支付" />
+
+        <TextView
+            android:id="@+id/tv_tx_remark"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/rt_text_secondary"
+            android:textSize="@dimen/text_label"
+            tools:text="订单 12 余额支付" />
+
+        <TextView
+            android:id="@+id/tv_tx_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/rt_text_hint"
+            android:textSize="@dimen/text_caption"
+            tools:text="2026-09-16 10:20:31" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_tx_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_12"
+        android:gravity="end"
+        android:textSize="@dimen/text_subtitle"
+        android:textStyle="bold"
+        android:textColor="@color/rt_text_primary"
+        tools:text="-¥99.00" />
+</LinearLayout>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:foreground="?attr/selectableItemBackground" xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="@dimen/space_12"
+    android:layout_marginBottom="@dimen/space_10"
+    android:background="@drawable/bg_section_card">
+
+    <!-- 选择框 -->
+    <CheckBox
+        android:id="@+id/cb_select"
+        android:layout_width="@dimen/space_24"
+        android:layout_height="@dimen/space_24"
+        android:checked="true"
+        android:buttonTint="@color/rt_primary" />
+
+    <!-- 商品图片 -->
+    <ImageView
+        android:id="@+id/iv_image"
+        android:layout_width="@dimen/size_100"
+        android:layout_height="@dimen/size_100"
+        android:layout_marginStart="@dimen/space_12"
+        android:contentDescription="商品图片"
+        android:background="@drawable/bg_search"
+        android:scaleType="centerCrop" />
+
+    <!-- 商品信息区 -->
+    <LinearLayout
+        android:layout_width="@dimen/space_0"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="@dimen/space_14"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="商品名称"
+            android:textSize="@dimen/text_body"
+            android:textColor="@color/rt_text_primary"
+            android:textStyle="bold"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:lineSpacingMultiplier="1.1" />
+
+        <View
+            android:layout_width="@dimen/space_0"
+            android:layout_height="@dimen/space_0"
+            android:layout_weight="1" />
+
+        <!-- 价格与数量 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="@dimen/space_8">
+
+            <TextView
+                android:id="@+id/tv_price"
+                android:layout_width="@dimen/space_0"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="¥99.99"
+                android:textColor="@color/rt_accent"
+                android:textSize="@dimen/text_subtitle"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/tv_decrease"
+                    android:layout_width="@dimen/space_28"
+                    android:layout_height="@dimen/space_28"
+                    android:gravity="center"
+                    android:text="-"
+                    android:textSize="@dimen/text_subtitle"
+                    android:background="@drawable/bg_search"
+                    android:textColor="@color/rt_text_primary"
+                    android:layout_marginEnd="@dimen/space_6" />
+
+                <TextView
+                    android:id="@+id/tv_quantity"
+                    android:layout_width="@dimen/space_40"
+                    android:layout_height="@dimen/space_28"
+                    android:gravity="center"
+                    android:text="1"
+                    android:textSize="@dimen/text_body"
+                    android:background="@color/rt_surface_variant"
+                    android:textColor="@color/rt_text_primary" />
+
+                <TextView
+                    android:id="@+id/tv_increase"
+                    android:layout_width="@dimen/space_28"
+                    android:layout_height="@dimen/space_28"
+                    android:gravity="center"
+                    android:text="+"
+                    android:textSize="@dimen/text_subtitle"
+                    android:background="@drawable/bg_search"
+                    android:textColor="@color/rt_text_primary"
+                    android:layout_marginStart="@dimen/space_6" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

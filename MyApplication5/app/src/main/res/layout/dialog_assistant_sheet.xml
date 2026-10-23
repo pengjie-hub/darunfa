@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  半屏助手面板的内容布局（AssistantSheetFragment 的根视图）。
+  =====================================================
+  结构极简：一个下拉手柄 + 直接复用 ChatAssistantView。
+  ChatAssistantView 自带"空列表时显示开场引导"，所以这里不需要额外写欢迎区。
+
+  注意：这里不写死高度。面板高度由 AssistantSheetFragment 在 onStart 里
+  通过 BottomSheetBehavior 控制（半展开比例 + 软键盘联动）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_assistant_sheet"
+    android:orientation="vertical">
+
+    <View
+        android:layout_width="@dimen/size_btn_lg"
+        android:layout_height="@dimen/space_4"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/space_8"
+        android:layout_marginBottom="@dimen/space_2"
+        android:background="@drawable/bg_sheet_handle" />
+
+    <com.example.myapplication.view.ChatAssistantView
+        android:id="@+id/chat_view"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1"
+        app:chatApiUrl="http://10.0.2.2:8080/api/assistant/chat"
+        app:chatHistoryUrl="http://10.0.2.2:8080/api/assistant/history"
+        app:chatPlaceholder="问我：找商品 / 比参数 / 查物流 / 下单"
+        app:chatTypingSpeedMs="28"
+        app:chatCharsPerTick="2"
+        app:chatMaxContextMessages="20" />
+</LinearLayout>

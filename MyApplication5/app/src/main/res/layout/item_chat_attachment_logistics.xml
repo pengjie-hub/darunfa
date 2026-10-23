@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AI 助手：查物流卡片
+  =====================================================
+  顶部"概要行"（订单号 + 当前状态大标签）+ 时间线段。
+  时间线由 status / paid / shipped / delivered 等事件动态 inflate 时间线节点。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_8"
+    android:background="@drawable/bg_chat_attachment_card"
+    android:orientation="vertical"
+    android:padding="@dimen/space_10">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tv_chat_logistics_orderno"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/chat_text_ai"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold"
+            tools:text="订单号 DR20260911102500123" />
+
+        <TextView
+            android:id="@+id/tv_chat_logistics_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_chat_logistics_status"
+            android:paddingStart="@dimen/space_8"
+            android:paddingEnd="@dimen/space_8"
+            android:paddingTop="@dimen/space_2"
+            android:paddingBottom="@dimen/space_2"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_caption"
+            tools:text="运输中" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_chat_logistics_company"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_6"
+        android:textColor="@color/chat_text_ai"
+        android:textSize="@dimen/text_label"
+        tools:text="顺丰速运 · SF1234567890" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:text="物流进度"
+        android:textColor="@color/chat_text_ai_muted"
+        android:textSize="@dimen/chat_text_size_meta" />
+
+    <LinearLayout
+        android:id="@+id/ll_chat_logistics_timeline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:orientation="vertical" />
+
+    <TextView
+        android:id="@+id/tv_chat_logistics_no_record"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_6"
+        android:textColor="@color/chat_text_ai_muted"
+        android:textSize="@dimen/text_label"
+        android:visibility="gone"
+        tools:text="尚未发货"
+        tools:visibility="visible" />
+</LinearLayout>

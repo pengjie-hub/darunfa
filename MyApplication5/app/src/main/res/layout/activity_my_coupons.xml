@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  我的优惠券（MyCouponsActivity）
+  三个页签在本地按 status 过滤同一次请求结果，避免为「已使用/已过期」再发两次网络请求。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rt_background"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rt_primary"
+        app:navigationContentDescription="返回"
+        app:navigationIcon="@drawable/ic_circle_arrow_back">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/space_10"
+            android:text="我的优惠券"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_coupons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rt_surface"
+        app:tabIndicatorColor="@color/rt_primary"
+        app:tabIndicatorHeight="@dimen/space_4"
+        app:tabSelectedTextColor="@color/rt_primary"
+        app:tabTextColor="@color/rt_text_secondary" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_coupons"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="@dimen/space_12"
+            android:paddingBottom="@dimen/space_12"
+            tools:listitem="@layout/item_coupon" />
+
+        <!-- 空状态：文案随页签变化，并给出「去哪儿领」的出路 -->
+        <LinearLayout
+            android:id="@+id/state_empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/tv_empty_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="还没有可用的优惠券"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_subtitle" />
+
+            <TextView
+                android:id="@+id/tv_empty_desc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_8"
+                android:text="去促销活动页领券，结算时可抵扣"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_label" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_goto_promotions"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/size_btn_lg"
+                android:layout_marginTop="@dimen/space_20"
+                android:paddingStart="@dimen/space_24"
+                android:paddingEnd="@dimen/space_24"
+                android:text="去逛逛促销活动"
+                android:textColor="@color/rt_text_on_primary"
+                android:textSize="@dimen/text_body"
+                app:backgroundTint="@color/rt_primary"
+                app:cornerRadius="@dimen/radius_xl" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/state_loading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_12"
+                android:text="加载中…"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_body" />
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>

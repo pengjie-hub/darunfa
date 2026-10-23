@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  促销详情弹框底板：白色 + 16dp 圆角。
+  弹框 Window 背景被设为透明，圆角完全由这个 drawable 决定，
+  因此不会出现"系统默认方角白底"包在圆角卡片外面的露边问题。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/rt_surface" />
+    <corners android:radius="@dimen/radius_lg" />
+</shape>

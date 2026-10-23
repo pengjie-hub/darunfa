@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AI 助手：商品单卡 / 缩略图占位：更浅的背景，与气泡视觉分层。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/chat_attachment_item_bg" />
+    <corners android:radius="@dimen/radius_sm" />
+</shape>

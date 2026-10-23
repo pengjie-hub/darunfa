@@ -1,0 +1,73 @@
+classDiagram
+    class User {
+        +Long id
+        +String username
+        +String nickname
+        +BigDecimal balance
+        +UserRole role
+        +Integer status
+    }
+    class BalanceTransactionType {
+        <<enumeration>>
+        INIT
+        RECHARGE
+        PAY
+        REFUND
+    }
+    class BalanceTransaction {
+        +Long id
+        +Long userId
+        +BalanceTransactionType type
+        +BigDecimal amount
+        +BigDecimal balanceAfter
+        +String bizNo
+        +Long orderId
+        +String remark
+        +LocalDateTime createdAt
+    }
+    class PaymentMethod {
+        <<enumeration>>
+        WECHAT
+        ALIPAY
+        BANK
+        CASH
+        BALANCE
+    }
+    class WalletService {
+        +WalletDTO getWallet(Long userId, int limit)
+        +WalletDTO recharge(Long userId, BigDecimal amount, String requestId)
+        +void payOrder(Long userId, Long orderId, BigDecimal amount)
+        +BigDecimal refundOrderToBalance(Long orderId, Long userId)
+        +void initBalance(Long userId, BigDecimal amount)
+        -User lockUser(Long userId)
+        -void record(User u, BalanceTransactionType t, BigDecimal amt, String bizNo, Long orderId, String remark)
+    }
+    class OrderService {
+        +OrderDTO pay(Long userId, Long orderId, PaymentMethod method)
+        +OrderDTO cancel(Long userId, Long orderId)
+        +void restock(List~OrderItem~ items)
+    }
+    class RefundService {
+        +RefundDTO approve(Long operatorId, Long refundId)
+    }
+    class UserRepository {
+        +Optional~User~ findByIdForUpdate(Long id)
+    }
+    class BalanceTransactionRepository {
+        +Optional~BalanceTransaction~ findByBizNo(String bizNo)
+        +boolean existsByBizNo(String bizNo)
+        +List~BalanceTransaction~ findByUserIdOrderByIdDesc(Long userId, Pageable p)
+    }
+    class PaymentRepository {
+        +List~Payment~ findByOrderIdOrderByCreatedAtDesc(Long orderId)
+    }
+
+    User "1" --> "*" BalanceTransaction : user_id
+    BalanceTransaction --> BalanceTransactionType
+    WalletService --> UserRepository
+    WalletService --> BalanceTransactionRepository
+    WalletService --> PaymentRepository
+    OrderService --> WalletService
+    OrderService --> UserRepository
+    RefundService --> WalletService
+    RefundService --> OrderService

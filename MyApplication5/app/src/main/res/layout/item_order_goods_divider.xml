@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  订单卡片「组内商品行之间的分隔线」。
+  同一订单有多件商品时，由 OrderAdapter 在相邻两行商品之间 inflate 本布局，
+  让「这是同一单的多件商品」而非「多张卡片」的视觉层次看得更清楚。
+
+  尺寸与卡片顶部分隔线（12dp 节奏）保持同一体系；不要用 1px（在 xxhdpi 下比 1dp 还细）。
+-->
+<View xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/space_1"
+    android:layout_marginTop="@dimen/space_10"
+    android:layout_marginBottom="@dimen/space_10"
+    android:background="@color/rt_divider" />

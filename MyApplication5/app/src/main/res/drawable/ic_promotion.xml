@@ -1,0 +1,11 @@
+<!-- 促销海报图标 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/space_24"
+    android:height="@dimen/space_24"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorOnSurface">
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="M3,4h18v18H3V4z M19,8H5v10h14V8z M17,16H7v-2h10V16z M17,12H7v-2h10V12z M17,8H7V6h10V8z" />
+</vector>

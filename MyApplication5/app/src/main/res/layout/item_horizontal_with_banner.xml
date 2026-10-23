@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:foreground="?attr/selectableItemBackground" xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/space_8"
+    android:layout_margin="@dimen/space_4"
+    android:background="@drawable/bg_rounded_corner_b">
+
+    <!-- 轮播图区域（ViewPager2） -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/text_label"
+        android:textColor="@color/rt_text_primary"
+        android:layout_marginTop="@dimen/space_4"
+        android:text="标题文本"/>
+
+    <TextView
+        android:id="@+id/tv_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/text_caption"
+        android:textColor="@color/rt_text_secondary"
+        android:text="副标题文本"/>
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/item_banner"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/size_100" />
+
+    <!-- 文本区域 -->
+
+
+</LinearLayout>

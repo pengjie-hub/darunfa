@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- 第一行：四个功能项 -->
+    <LinearLayout
+        android:id="@+id/four_features_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="4">
+
+        <!-- 功能项1 -->
+        <LinearLayout
+            android:id="@+id/feature1"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="@dimen/space_16"
+            android:background="?attr/selectableItemBackground">
+            <ImageView
+                android:id="@+id/feature1_icon"
+                android:layout_width="@dimen/size_btn_sm"
+                android:layout_height="@dimen/size_btn_sm"
+                android:layout_marginBottom="@dimen/space_8"
+                android:contentDescription="功能图标"/>
+            <TextView
+                android:id="@+id/feature1_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_label"
+                android:textColor="@color/rt_text_primary"/>
+        </LinearLayout>
+
+        <!-- 功能项2 -->
+        <LinearLayout
+            android:id="@+id/feature2"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="@dimen/space_16"
+            android:background="?attr/selectableItemBackground">
+            <ImageView
+                android:id="@+id/feature2_icon"
+                android:layout_width="@dimen/size_btn_sm"
+                android:layout_height="@dimen/size_btn_sm"
+                android:layout_marginBottom="@dimen/space_8"
+                android:contentDescription="功能图标"/>
+            <TextView
+                android:id="@+id/feature2_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_label"
+                android:textColor="@color/rt_text_primary"/>
+        </LinearLayout>
+
+        <!-- 功能项3 -->
+        <LinearLayout
+            android:id="@+id/feature3"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="@dimen/space_16"
+            android:background="?attr/selectableItemBackground">
+            <ImageView
+                android:id="@+id/feature3_icon"
+                android:layout_width="@dimen/size_btn_sm"
+                android:layout_height="@dimen/size_btn_sm"
+                android:layout_marginBottom="@dimen/space_8"
+                android:contentDescription="功能图标"/>
+            <TextView
+                android:id="@+id/feature3_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_label"
+                android:textColor="@color/rt_text_primary"/>
+        </LinearLayout>
+
+        <!-- 功能项4 -->
+        <LinearLayout
+            android:id="@+id/feature4"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="@dimen/space_16"
+            android:background="?attr/selectableItemBackground">
+            <ImageView
+                android:id="@+id/feature4_icon"
+                android:layout_width="@dimen/size_btn_sm"
+                android:layout_height="@dimen/size_btn_sm"
+                android:layout_marginBottom="@dimen/space_8"
+                android:contentDescription="功能图标"/>
+            <TextView
+                android:id="@+id/feature4_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_label"
+                android:textColor="@color/rt_text_primary"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 分隔线 -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_1"
+        android:background="@color/rt_divider"/>
+
+    <!-- 第二行：两个功能项 -->
+    <LinearLayout
+        android:id="@+id/two_features_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <!-- 功能项5 -->
+        <LinearLayout
+            android:id="@+id/feature5"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="@dimen/space_16"
+            android:paddingStart="@dimen/space_12"
+            android:background="?attr/selectableItemBackground">
+            <ImageView
+                android:id="@+id/feature5_icon"
+                android:layout_width="@dimen/size_btn_sm"
+                android:layout_height="@dimen/size_btn_sm"
+                android:layout_marginEnd="@dimen/space_10"
+                android:contentDescription="功能图标"/>
+            <TextView
+                android:id="@+id/feature5_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_body"
+                android:textColor="@color/rt_text_primary"/>
+        </LinearLayout>
+
+        <!-- 分隔线 -->
+        <View
+            android:id="@+id/middle_divider"
+            android:layout_width="@dimen/space_1"
+            android:layout_height="@dimen/space_40"
+            android:background="@color/rt_divider"/>
+
+        <!-- 功能项6 -->
+        <LinearLayout
+            android:id="@+id/feature6"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="@dimen/space_16"
+            android:paddingStart="@dimen/space_12"
+            android:background="?attr/selectableItemBackground">
+            <ImageView
+                android:id="@+id/feature6_icon"
+                android:layout_width="@dimen/size_btn_sm"
+                android:layout_height="@dimen/size_btn_sm"
+                android:layout_marginEnd="@dimen/space_10"
+                android:contentDescription="功能图标"/>
+            <TextView
+                android:id="@+id/feature6_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_body"
+                android:textColor="@color/rt_text_primary"/>
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

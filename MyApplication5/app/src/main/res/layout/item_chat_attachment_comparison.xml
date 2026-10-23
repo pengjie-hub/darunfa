@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AI 助手：参数对比卡片
+  =====================================================
+  标题 + 表头（商品各列） + 行（参数名 + 各值）。
+  行数随 rows 数量动态添加。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_8"
+    android:background="@drawable/bg_chat_attachment_card"
+    android:orientation="vertical"
+    android:padding="@dimen/space_10">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="参数对比"
+        android:textColor="@color/chat_text_ai"
+        android:textSize="@dimen/chat_text_size_meta"
+        android:textStyle="bold" />
+
+    <!-- 表头（横滑以容纳超过 3 列的情况） -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/ll_chat_compare_root"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </HorizontalScrollView>
+
+    <!-- 行容器（垂直，行内是"参数名 + 各值"横向 LinearLayout） -->
+    <LinearLayout
+        android:id="@+id/ll_chat_compare_rows"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:orientation="vertical"
+        tools:visibility="visible" />
+</LinearLayout>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AI 助手：订单预览 —— 一个商品行
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingTop="@dimen/space_4"
+    android:paddingBottom="@dimen/space_4">
+
+    <TextView
+        android:id="@+id/tv_chat_order_item_name"
+        android:layout_width="@dimen/space_0"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="@color/chat_text_ai"
+        android:textSize="@dimen/text_label"
+        tools:text="东北珍珠米 5kg 袋装" />
+
+    <TextView
+        android:id="@+id/tv_chat_order_item_qty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_8"
+        android:textColor="@color/chat_text_ai_muted"
+        android:textSize="@dimen/text_label"
+        tools:text="x 2" />
+
+    <TextView
+        android:id="@+id/tv_chat_order_item_subtotal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_8"
+        android:textColor="@color/chat_text_ai"
+        android:textSize="@dimen/text_label"
+        android:textStyle="bold"
+        tools:text="¥59.80" />
+</LinearLayout>

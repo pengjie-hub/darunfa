@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AI 助手"物流时间线节点"圆点 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/rt_primary" />
+    <size android:width="@dimen/space_14" android:height="@dimen/space_14" />
+</shape>

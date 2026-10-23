@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 用户消息气泡：右上角圆角小一些作为"尾巴"指向自己。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/chat_bubble_user" />
+    <corners
+        android:topLeftRadius="@dimen/chat_bubble_radius"
+        android:topRightRadius="@dimen/chat_bubble_radius_tail"
+        android:bottomLeftRadius="@dimen/chat_bubble_radius"
+        android:bottomRightRadius="@dimen/chat_bubble_radius" />
+</shape>

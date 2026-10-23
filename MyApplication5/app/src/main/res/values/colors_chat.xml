@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ChatAssistantView 颜色（浅色默认）
+  配套的深色版本在 values-night/colors_chat.xml，使用同名资源即可被 DayNight 自动切换。
+-->
+<resources>
+    <!-- 整体背景与分隔线 -->
+    <color name="chat_background">#F7F7F8</color>
+    <color name="chat_divider">#1A000000</color>
+
+    <!-- 气泡背景 -->
+    <color name="chat_bubble_user">#DE1313</color>          <!-- 品牌红 -->
+    <color name="chat_bubble_ai">#FFFFFF</color>
+    <color name="chat_bubble_ai_stroke">#E4E4E7</color>     <!-- AI 气泡描边 -->
+
+    <!-- 消息文字 -->
+    <color name="chat_text_user">#FFFFFF</color>
+    <color name="chat_text_ai">#1F2328</color>
+    <color name="chat_text_ai_muted">#5F6672</color>        <!-- 状态/时间副文字 -->
+
+    <!-- 打字指示器三点 -->
+    <color name="chat_typing_dot">#6B7280</color>
+
+    <!-- 错误条 -->
+    <color name="chat_error_bg">#FDECEC</color>
+    <color name="chat_error_text">#A32D2D</color>
+
+    <!-- 输入区 -->
+    <color name="chat_input_background">#FFFFFF</color>
+    <color name="chat_input_stroke">#E4E4E7</color>
+    <color name="chat_input_hint">#9CA3AF</color>
+
+    <!-- 发送按钮（与品牌色一致） -->
+    <color name="chat_send_button">#DE1313</color>
+    <color name="chat_send_text">#FFFFFF</color>
+
+    <!-- AI 助手"工具卡片" -->
+    <color name="chat_attachment_card_bg">#FFFFFF</color>
+    <color name="chat_attachment_card_border">#E4E4E7</color>
+    <color name="chat_attachment_item_bg">#F4F4F5</color>
+</resources>

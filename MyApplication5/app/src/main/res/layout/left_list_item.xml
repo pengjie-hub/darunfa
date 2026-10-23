@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    android:foreground="?attr/selectableItemBackground" xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/rt_background"
+    android:clickable="true"
+    android:orientation="vertical">
+    
+    <!-- 分隔线 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_1"
+        android:background="@color/rt_border" />
+    
+    <!-- 分类名称 -->
+    <TextView
+        android:id="@+id/left_text_name"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/size_touch"
+        android:text="xxx"
+        android:paddingLeft="@dimen/space_20"
+        android:gravity="center_vertical"
+        android:textColor="@color/rt_text_primary"
+        android:textSize="@dimen/text_body" />
+    
+    <!-- 左侧红色竖线指示器，选中时显示 -->
+    <View
+        android:id="@+id/selected_indicator"
+        android:layout_width="@dimen/space_4"
+        android:layout_height="@dimen/space_40"
+        android:background="@color/rt_primary"
+        android:visibility="gone"
+        android:layout_centerVertical="true"
+        android:layout_alignParentLeft="true" />
+    
+    <!-- 分隔线 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_1"
+        android:background="@color/rt_border" 
+        android:layout_alignParentBottom="true"/>
+
+</RelativeLayout>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AI 助手：参数对比 —— 列头单元格
+  =====================================================
+  在 ll_chat_compare_root 第一行 inflate 多次；每个单元格对应一个商品。
+-->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tv_chat_compare_header"
+    android:layout_width="@dimen/size_120"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/space_6"
+    android:textColor="@color/chat_text_ai"
+    android:textSize="@dimen/text_label"
+    android:textStyle="bold"
+    tools:text="商品 A" />

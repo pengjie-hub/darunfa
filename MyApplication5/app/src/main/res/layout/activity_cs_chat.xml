@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  在线客服聊天页（CsChatActivity）
+  顶部：返回 + 标题 + 当前服务方式（AI 应答 / 人工跟进）
+  中间：消息列表（客户在右，AI/人工客服在左）
+  底部：快捷问题 + 输入框 + 发送
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_cs_chat"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rt_background"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rt_primary"
+        app:navigationContentDescription="返回"
+        app:navigationIcon="@drawable/ic_circle_arrow_back">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/space_10"
+            android:paddingTop="@dimen/space_8"
+            android:paddingEnd="@dimen/space_10"
+            android:paddingBottom="@dimen/space_8">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="在线客服"
+                android:textColor="@color/rt_text_on_primary"
+                android:textSize="@dimen/text_subtitle"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_cs_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:text="AI 智能客服 · 7×24 在线"
+                android:textColor="@color/rt_text_on_gradient_secondary"
+                android:textSize="@dimen/text_label" />
+        </LinearLayout>
+    </androidx.appcompat.widget.Toolbar>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_cs_messages"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="@dimen/space_12"
+            android:paddingBottom="@dimen/space_12"
+            tools:listitem="@layout/item_cs_msg_received" />
+
+        <LinearLayout
+            android:id="@+id/state_cs_loading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ProgressBar
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_12"
+                android:text="正在接入客服…"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_body" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- 快捷提问：客户点一下就能发，降低「不知道问什么」的空白感 -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rt_surface"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/space_12"
+            android:paddingTop="@dimen/space_8"
+            android:paddingEnd="@dimen/space_12"
+            android:paddingBottom="@dimen/space_4">
+
+            <TextView
+                android:id="@+id/chip_q1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chat_welcome_chip"
+                android:paddingStart="@dimen/space_12"
+                android:paddingTop="@dimen/space_6"
+                android:paddingEnd="@dimen/space_12"
+                android:paddingBottom="@dimen/space_6"
+                android:text="怎么申请退款？"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+
+            <TextView
+                android:id="@+id/chip_q2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_8"
+                android:background="@drawable/bg_chat_welcome_chip"
+                android:paddingStart="@dimen/space_12"
+                android:paddingTop="@dimen/space_6"
+                android:paddingEnd="@dimen/space_12"
+                android:paddingBottom="@dimen/space_6"
+                android:text="多久能送到？"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+
+            <TextView
+                android:id="@+id/chip_q3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_8"
+                android:background="@drawable/bg_chat_welcome_chip"
+                android:paddingStart="@dimen/space_12"
+                android:paddingTop="@dimen/space_6"
+                android:paddingEnd="@dimen/space_12"
+                android:paddingBottom="@dimen/space_6"
+                android:text="优惠券怎么用？"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+
+            <TextView
+                android:id="@+id/chip_q4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_8"
+                android:background="@drawable/bg_chat_welcome_chip"
+                android:paddingStart="@dimen/space_12"
+                android:paddingTop="@dimen/space_6"
+                android:paddingEnd="@dimen/space_12"
+                android:paddingBottom="@dimen/space_6"
+                android:text="转人工"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- 输入区 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rt_surface"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/space_12"
+        android:paddingTop="@dimen/space_8"
+        android:paddingEnd="@dimen/space_12"
+        android:paddingBottom="@dimen/space_8"
+        android:elevation="@dimen/elevation_lg">
+
+        <EditText
+            android:id="@+id/et_cs_input"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="@dimen/size_btn_lg"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chat_input"
+            android:hint="请描述您遇到的问题…"
+            android:imeOptions="actionSend"
+            android:inputType="text"
+            android:maxLength="500"
+            android:maxLines="1"
+            android:paddingStart="@dimen/space_14"
+            android:paddingEnd="@dimen/space_14"
+            android:textColor="@color/rt_text_primary"
+            android:textColorHint="@color/rt_text_hint"
+            android:textSize="@dimen/text_body" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_cs_send"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/size_btn_lg"
+            android:layout_marginStart="@dimen/space_8"
+            android:minWidth="@dimen/size_72"
+            android:text="发送"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_body"
+            app:backgroundTint="@color/rt_primary"
+            app:cornerRadius="@dimen/radius_xl" />
+    </LinearLayout>
+</LinearLayout>

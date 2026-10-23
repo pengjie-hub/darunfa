@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 订单数量角标背景(圆形红点) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/rt_surface" />
+    <stroke android:width="@dimen/space_1" android:color="@color/rt_primary" />
+    <size android:width="@dimen/space_16" android:height="@dimen/space_16" />
+</shape>

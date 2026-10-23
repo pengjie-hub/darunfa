@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ChatAssistantView 自定义属性
+  =====================================================
+  业务侧配置：
+    chatApiUrl            后端 chat 接口完整 URL（如 http://host:port/api/chat）
+    chatHistoryUrl        后端历史回放接口 URL（如 http://host:port/api/assistant/history）；
+                          不配置时按「把 chatApiUrl 结尾的 /chat 换成 /history」自动推导
+    chatHeaderAuth        鉴权头（"Authorization" 头的 value，如 "Bearer xxx"），可空
+    chatPlaceholder       输入框占位提示
+    chatSendText          发送按钮文字
+  体验侧配置：
+    chatTypingSpeedMs     客户端模拟流式：相邻两次显示之间间隔（毫秒），值越小越快
+    chatCharsPerTick      客户端模拟流式：每 tick 推几个字符（>=1）
+    chatMaxContextMessages 发送给后端时携带的最近消息条数（上下文连续对话）
+    chatMaxMessageWidthDp 消息气泡最大宽度（不同屏幕尺寸可重定义）
+  主题侧（用 ?attr 引用主题颜色，自动跟随 DayNight）：
+    chatBubbleUserColor   用户气泡背景
+    chatBubbleAiColor     AI 气泡背景
+    chatTextUserColor     用户消息文字
+    chatTextAiColor       AI 消息文字
+-->
+<resources>
+    <declare-styleable name="ChatAssistantView">
+        <attr name="chatApiUrl" format="string" />
+        <attr name="chatHistoryUrl" format="string" />
+        <attr name="chatHeaderAuth" format="string" />
+        <attr name="chatPlaceholder" format="string" />
+        <attr name="chatSendText" format="string" />
+
+        <attr name="chatTypingSpeedMs" format="integer" />
+        <attr name="chatCharsPerTick" format="integer" />
+        <attr name="chatMaxContextMessages" format="integer" />
+        <attr name="chatMaxMessageWidthDp" format="integer" />
+
+        <attr name="chatBubbleUserColor" format="color" />
+        <attr name="chatBubbleAiColor" format="color" />
+        <attr name="chatTextUserColor" format="color" />
+        <attr name="chatTextAiColor" format="color" />
+    </declare-styleable>
+</resources>

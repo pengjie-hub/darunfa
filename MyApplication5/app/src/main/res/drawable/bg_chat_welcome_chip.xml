@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 聊天开场引导里的「快捷问题」小胶囊：白底 + 灰描边，视觉上比能力入口更轻 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="@dimen/radius_lg" />
+    <solid android:color="@color/rt_surface" />
+    <stroke
+        android:width="@dimen/space_1"
+        android:color="@color/rt_border" />
+</shape>

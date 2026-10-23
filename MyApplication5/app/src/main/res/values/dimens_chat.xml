@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ChatAssistantView 尺寸默认值（手机竖屏基线）
+  平板（sw600dp）请见 layout-sw600dp/dimens_chat.xml，会覆盖部分尺寸让气泡更宽。
+-->
+<resources>
+    <dimen name="chat_bubble_max_width">280dp</dimen>
+    <dimen name="chat_bubble_padding_h">14dp</dimen>
+    <dimen name="chat_bubble_padding_v">10dp</dimen>
+    <dimen name="chat_bubble_radius">16dp</dimen>
+    <dimen name="chat_bubble_radius_tail">4dp</dimen>
+
+    <dimen name="chat_message_gap">12dp</dimen>
+    <dimen name="chat_list_padding">12dp</dimen>
+
+    <dimen name="chat_input_height">44dp</dimen>
+    <dimen name="chat_input_radius">22dp</dimen>
+    <dimen name="chat_input_padding_h">16dp</dimen>
+    <dimen name="chat_input_stroke_width">1dp</dimen>
+    <dimen name="chat_send_button_min_width">64dp</dimen>
+
+    <dimen name="chat_avatar_size">28dp</dimen>
+
+    <dimen name="chat_text_size">15sp</dimen>
+    <dimen name="chat_text_size_meta">12sp</dimen>
+
+    <dimen name="chat_typing_dot_size">6dp</dimen>
+    <dimen name="chat_typing_dot_gap">4dp</dimen>
+</resources>

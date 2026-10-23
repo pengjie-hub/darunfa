@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  首页共享头部（分类网格 + 横向推荐横幅 + 促销活动板块）
+  ================================================================
+  2026-09-14 调整：它不再是「精选」列表的头部 item，而是被 fragment_home.xml 用
+  <include> 放在 搜索栏 与 TabLayout 之间 —— 整页只创建一份，位于导航栏之上，
+  因此左右切换分类时它保持不变（不重建、也不随 ViewPager 横移）。
+
+  ⚠️ 不要把这几块塞回 AppBarLayout：合计约 630dp，超过手机可用屏高，
+     会把下方商品列表整个挤出屏幕（历史上的核心问题）。
+  ⚠️ 三块内部都是 RecyclerView 且 nestedScrollingEnabled=false，
+     滚动统一交给外层 NestedScrollView。
+
+  用法：由 HomeFragment 在 onCreateView 里调用 HomeHeaderBinder.bind(this, header) 绑定；
+        控件 id 与原来一致，绑定逻辑无需改动。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- ===== 分类网格入口（5 列，8 个一级分类 → 5+3 两行） ===== -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/grid_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_12"
+        android:layout_marginEnd="@dimen/space_12"
+        android:layout_marginTop="@dimen/space_12"
+        android:background="@drawable/bg_section_card"
+        android:padding="@dimen/space_12"
+        android:elevation="@dimen/elevation_sm"
+        android:nestedScrollingEnabled="false"
+        android:overScrollMode="never"
+        android:scrollbars="none" />
+
+    <!-- ===== 横向推荐横幅（4 列） ===== -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/horizontal_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_12"
+        android:layout_marginStart="@dimen/space_12"
+        android:layout_marginEnd="@dimen/space_12"
+        android:background="@drawable/bg_section_card"
+        android:padding="@dimen/space_12"
+        android:elevation="@dimen/elevation_sm"
+        android:nestedScrollingEnabled="false"
+        android:overScrollMode="never"
+        android:scrollbars="none" />
+
+    <!-- ===== 促销活动板块(数据来自 /api/promotions，仅展示启用且在有效期内的) ===== -->
+    <LinearLayout
+        android:id="@+id/layout_promotion_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_12"
+        android:layout_marginStart="@dimen/space_12"
+        android:layout_marginEnd="@dimen/space_12"
+        android:orientation="vertical"
+        android:background="@drawable/bg_section_card"
+        android:paddingTop="@dimen/space_12"
+        android:paddingBottom="@dimen/space_12"
+        android:elevation="@dimen/elevation_sm"
+        android:visibility="gone">
+
+        <!-- 板块标题 + 查看更多 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/space_12"
+            android:paddingEnd="@dimen/space_12">
+
+            <View
+                android:layout_width="@dimen/space_4"
+                android:layout_height="@dimen/space_16"
+                android:background="@color/rt_primary" />
+
+            <TextView
+                android:layout_width="@dimen/space_0"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/space_8"
+                android:text="促销活动"
+                android:textColor="@color/rt_text_primary"
+                android:textSize="@dimen/text_subtitle"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_promotion_more"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="@dimen/space_4"
+                android:text="查看更多 &gt;"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+        </LinearLayout>
+
+        <!-- 横向滑动卡片列表 -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_promotions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_10"
+            android:paddingStart="@dimen/space_12"
+            android:paddingEnd="@dimen/space_2"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:scrollbars="none"
+            android:nestedScrollingEnabled="false" />
+
+        <!-- 空状态(接口成功但无生效促销时显示) -->
+        <TextView
+            android:id="@+id/tv_promotion_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:gravity="center"
+            android:padding="@dimen/space_14"
+            android:text="暂无进行中的促销活动，敬请期待"
+            android:textColor="@color/rt_text_hint"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

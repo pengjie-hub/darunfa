@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AI 助手"工具卡片"底板：白底 + 浅灰描边 + 圆角 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/chat_attachment_card_bg" />
+    <stroke android:width="0.5dp" android:color="@color/chat_attachment_card_border" />
+    <corners android:radius="@dimen/radius_sm" />
+</shape>

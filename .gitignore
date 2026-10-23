@@ -1,0 +1,31 @@
+# ===== 依赖与构建产物 =====
+node_modules/
+dist/
+dist-ssr/
+backend/target/
+MyApplication5/build/
+MyApplication5/app/build/
+MyApplication5/.gradle/
+.gradle/
+*.log
+
+# ===== IDE / 工具 =====
+.idea/
+.vscode/
+.workbuddy/
+*.iml
+.DS_Store
+Thumbs.db
+
+# ===== 压缩包备份（体积大，不入库）=====
+*.zip
+
+# ===== 本地环境与密钥 =====
+.env.local
+.env.*.local
+local.properties
+*.keystore
+*.jks
+
+# ===== 迁移基线产物（截图/种子数据按需手动纳入）=====
+# docs/baseline/

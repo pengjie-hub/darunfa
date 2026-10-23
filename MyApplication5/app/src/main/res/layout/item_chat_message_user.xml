@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  用户消息气泡（右对齐）：纯品牌色填充，右上角小圆角作为"尾巴"指向自己。
+  整体 LinearLayout + layout_gravity=end 让气泡在列表里靠右。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/chat_message_gap"
+    android:gravity="end"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/tv_chat_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_chat_bubble_user"
+        android:maxWidth="@dimen/chat_bubble_max_width"
+        android:paddingStart="@dimen/chat_bubble_padding_h"
+        android:paddingEnd="@dimen/chat_bubble_padding_h"
+        android:paddingTop="@dimen/chat_bubble_padding_v"
+        android:paddingBottom="@dimen/chat_bubble_padding_v"
+        android:textColor="@color/chat_text_user"
+        android:textSize="@dimen/chat_text_size"
+        android:lineSpacingExtra="@dimen/space_2" />
+</LinearLayout>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/rt_background">
+
+    <!-- 顶部标题栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/rt_primary"
+        android:padding="@dimen/space_12">
+        <ImageView
+            android:id="@+id/iv_back"
+            android:layout_width="@dimen/space_32"
+            android:layout_height="@dimen/space_32"
+            android:src="@drawable/ic_circle_arrow_back"
+            android:tint="@color/rt_text_on_primary"
+            android:contentDescription="返回" />
+        <TextView
+            android:layout_width="@dimen/space_0"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="全部评论"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_subtitle"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginEnd="@dimen/space_32" />
+    </LinearLayout>
+
+    <!-- 评分概览 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_section_card"
+        android:layout_margin="@dimen/space_12"
+        android:padding="@dimen/space_16"
+        android:elevation="@dimen/elevation_sm">
+        <TextView
+            android:id="@+id/tv_avg_rating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0.0"
+            android:textColor="@color/rt_warning"
+            android:textSize="@dimen/text_display"
+            android:textStyle="bold" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="@dimen/space_14">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="综合评分"
+                android:textColor="@color/rt_text_secondary"
+                android:textSize="@dimen/text_label" />
+            <TextView
+                android:id="@+id/tv_review_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="共0条评论"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_label"
+                android:layout_marginTop="@dimen/space_4" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 评论列表 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_all_reviews"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1"
+        android:layout_marginStart="@dimen/space_12"
+        android:layout_marginEnd="@dimen/space_12"
+        android:paddingHorizontal="@dimen/space_4" />
+
+    <!-- 空状态 -->
+    <TextView
+        android:id="@+id/tv_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="@dimen/space_40"
+        android:text="暂无评论"
+        android:textColor="@color/rt_text_hint"
+        android:textSize="@dimen/text_body"
+        android:visibility="gone" />
+
+</LinearLayout>

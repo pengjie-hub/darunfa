@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  商品网格（首页「精选」RecommendFragment、首页各分类页 HomeListFragment、
+  「我的」页商品 Tab 三处共用）。
+  ========================================================================
+  ⚠️ 根布局与 rv_goods 都用 wrap_content，由宿主结构决定量高方式：
+    · 首页：外套 NestedScrollView，列表被量成内容全高 → 列表自己“滚不动”，
+            滚动统一交给外层（由代码 setNestedScrollingEnabled(false) 关闭嵌套滚动，
+            见 HomeListFragment#ARG_NESTED_SCROLLING 注释）；
+    · 我的页：外层是 AppBarLayout + ViewPager2，页面被强制 match_parent，
+            列表用 AT_MOST 量到剩余高度 → 列表自己滚动，并把滚动回调冒泡给
+            AppBarLayout 去折叠/展开顶部信息卡（必须保持嵌套滚动开启）。
+  ⚠️ 所以这里**不能**写死 android:nestedScrollingEnabled，
+     否则会同时影响两个宿主 —— 历史上就因为写死 false，
+     导致「我的」页顶部信息卡收起后拉不回来。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/rt_background"
+    tools:context=".fragment.RecommendFragment">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_goods"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/space_4"
+        android:clipToPadding="false" />
+
+</FrameLayout>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  地址列表项（item_address）
+  第一行：收货人 + 手机号 + （默认）标签
+  第二行：完整地址
+  第三行：设为默认 / 编辑 / 删除
+-->
+<LinearLayout
+    android:foreground="?attr/selectableItemBackground" xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/space_12"
+    android:layout_marginEnd="@dimen/space_12"
+    android:layout_marginBottom="@dimen/space_12"
+    android:background="@drawable/bg_section_card"
+    android:orientation="vertical"
+    android:padding="@dimen/space_16">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tv_addr_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/rt_text_primary"
+            android:textSize="@dimen/text_subtitle"
+            android:textStyle="bold"
+            tools:text="张三" />
+
+        <TextView
+            android:id="@+id/tv_addr_phone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_12"
+            android:textColor="@color/rt_text_secondary"
+            android:textSize="@dimen/text_body"
+            tools:text="13800138000" />
+
+        <TextView
+            android:id="@+id/tv_addr_default"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_8"
+            android:background="@drawable/bg_tag_default_address"
+            android:paddingStart="@dimen/space_6"
+            android:paddingEnd="@dimen/space_6"
+            android:paddingTop="@dimen/space_2"
+            android:paddingBottom="@dimen/space_2"
+            android:text="默认"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_caption"
+            android:visibility="gone"
+            tools:visibility="visible" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_addr_detail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:textColor="@color/rt_text_secondary"
+        android:textSize="@dimen/text_body"
+        tools:text="广东省深圳市南山区 中山路 1 号 2 栋 301" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_1"
+        android:layout_marginTop="@dimen/space_12"
+        android:layout_marginBottom="@dimen/space_10"
+        android:background="@color/chat_divider" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- 已默认时置灰，避免「点了没反应」 -->
+        <TextView
+            android:id="@+id/tv_addr_set_default"
+            android:layout_width="@dimen/space_0"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingTop="@dimen/space_4"
+            android:paddingBottom="@dimen/space_4"
+            android:text="设为默认"
+            android:textColor="@color/rt_text_secondary"
+            android:textSize="@dimen/text_body" />
+
+        <TextView
+            android:id="@+id/tv_addr_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/space_12"
+            android:paddingTop="@dimen/space_4"
+            android:paddingEnd="@dimen/space_12"
+            android:paddingBottom="@dimen/space_4"
+            android:text="编辑"
+            android:textColor="@color/rt_primary"
+            android:textSize="@dimen/text_body" />
+
+        <TextView
+            android:id="@+id/tv_addr_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/space_8"
+            android:paddingTop="@dimen/space_4"
+            android:paddingBottom="@dimen/space_4"
+            android:text="删除"
+            android:textColor="@color/rt_text_secondary"
+            android:textSize="@dimen/text_body" />
+    </LinearLayout>
+</LinearLayout>

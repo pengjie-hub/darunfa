@@ -1,0 +1,2961 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大润发电商后台管理系统</title>
+    <link rel="stylesheet" href="admin-theme.css?v=4">
+    <!-- 小运操作确认卡片样式：独立文件，全部 .xy- 前缀，不改 admin-theme.css -->
+    <link rel="stylesheet" href="xiaoyun-action.css?v=3">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="mark">润</div>
+            <div>
+                <div class="title">电商后台管理</div>
+                <div class="subtitle">大润发风格 v2.0</div>
+            </div>
+        </div>
+        <nav id="nav">
+            <a data-mod="dashboard" class="active"><span class="ico">📊</span><span>仪表盘</span></a>
+            <a data-mod="products" data-perm="product:view"><span class="ico">🛒</span><span>商品管理</span></a>
+            <a data-mod="orders" data-perm="order:view"><span class="ico">📦</span><span>订单管理</span></a>
+            <a data-mod="refunds" data-perm="order:view,cs:manage"><span class="ico">💰</span><span>退款管理</span><span id="refundUnreadBadge" class="nav-badge" style="display:none">0</span></a>
+            <a data-mod="risk" data-perm="risk:view"><span class="ico">🛡️</span><span>风险监控</span><span id="riskUnreadBadge" class="nav-badge" style="display:none">0</span></a>
+            <a data-mod="stock" data-perm="product:view"><span class="ico">📉</span><span>库存管理</span></a>
+            <a data-mod="members" data-perm="member:view"><span class="ico">👥</span><span>会员管理</span></a>
+            <a data-mod="roles" data-perm="__ADMIN_ONLY__"><span class="ico">🛡️</span><span>角色管理</span></a>
+            <a data-mod="permissions" data-perm="__ADMIN_ONLY__"><span class="ico">🔑</span><span>权限管理</span></a>
+            <a data-mod="reviews" data-perm="review:reply"><span class="ico">💬</span><span>评论管理</span></a>
+            <a data-mod="cs" data-perm="cs:manage"><span class="ico">🎧</span><span>客服管理</span><span id="csUnreadBadge" class="nav-badge" style="display:none">0</span></a>
+            <a data-mod="categories" data-perm="product:view"><span class="ico">🗂️</span><span>分类管理</span></a>
+            <a data-mod="promotions" data-perm="promotion:manage"><span class="ico">🏷️</span><span>促销管理</span></a>
+            <a data-mod="payments" data-perm="order:view"><span class="ico">💳</span><span>支付管理</span></a>
+            <a data-mod="shipments" data-perm="order:view"><span class="ico">🚚</span><span>物流管理</span></a>
+            <a data-mod="knowledge" data-perm="__ADMIN_ONLY__"><span class="ico">📚</span><span>AI 知识库</span></a>
+        </nav>
+        <div class="foot">小发智购运营后台</div>
+    </aside>
+
+    <div class="main">
+        <div class="topbar">
+            <div class="page-title" id="pageTitle">仪表盘</div>
+            <div class="user-area">
+                <span class="role-badge" id="roleBadge" style="display:none">-</span>
+                <span class="user-name" id="userName">-</span>
+                <button class="btn ghost sm" id="logoutBtn">退出</button>
+            </div>
+        </div>
+        <div class="content" id="content"></div>
+    </div>
+</div>
+
+<!-- 通用模态框 -->
+<div class="modal-mask" id="modalMask">
+    <div class="modal">
+        <div class="modal-head">
+            <h3 id="modalTitle">编辑</h3>
+            <button class="close" id="modalClose">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-foot" id="modalFoot">
+            <button class="btn ghost" id="modalCancel">取消</button>
+            <button class="btn primary" id="modalOk">确定</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- AI 助手悬浮按钮 + 弹窗 -->
+<div class="ai-fab" id="aiFab" title="AI 运营助手">💬</div>
+<div class="ai-dialog-mask" id="aiMask">
+    <div class="ai-dialog">
+        <div class="ai-dialog-head">
+            <h3>🤖 AI 运营助手 · 小运</h3>
+            <div class="ai-head-side">
+                <button id="aiClear">清空</button>
+                <button class="close" id="aiClose">&times;</button>
+            </div>
+        </div>
+        <div class="ai-messages" id="aiMessages"></div>
+        <div class="ai-input-bar">
+            <textarea id="aiInput" rows="1" placeholder="试试输入：最近 5 单待发货有哪些？红富士苹果还有多少库存？" maxlength="500"></textarea>
+            <button id="aiSend">发送</button>
+        </div>
+    </div>
+</div>
+
+<script src="xiaoyun-action.js?v=2"></script>
+<script>
+// ==================== 基础封装 ====================
+const TOKEN_KEY = 'token';
+const USER_KEY = 'user';
+let ME = null;
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function logout() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    window.location.href = '/login.html';
+}
+
+function hasPerm(...codes) {
+    if (!ME) return false;
+    if (ME.role === 'ADMIN') return true;
+    const set = ME.permissions || [];
+    return codes.some(c => set.includes(c));
+}
+function hasRole(role) { return ME && ME.role === role; }
+
+async function loadMe() {
+    try {
+        const me = await api('/auth/me');
+        ME = me;
+        const nameEl = document.getElementById('userName');
+        const badge = document.getElementById('roleBadge');
+        if (nameEl) nameEl.textContent = me.nickname || me.username || '-';
+        if (badge) {
+            badge.textContent = roleLabel(me.role);
+            badge.className = 'role-badge r-' + (me.role || 'USER');
+            badge.style.display = 'inline-block';
+        }
+        return me;
+    } catch (e) {
+        return null;
+    }
+}
+
+function applyNavVisibility() {
+    document.querySelectorAll('#nav a[data-perm]').forEach(a => {
+        const spec = a.getAttribute('data-perm') || '';
+        if (spec === '__ADMIN_ONLY__') {
+            a.style.display = hasRole('ADMIN') ? '' : 'none';
+            return;
+        }
+        if (spec === '') {
+            a.style.display = '';
+            return;
+        }
+        const codes = spec.split(',').map(s => s.trim()).filter(Boolean);
+        a.style.display = hasPerm(...codes) ? '' : 'none';
+    });
+    // AI 运营助手悬浮球仅管理员可用：其后端接口 /admin/ai/* 已由 @RequireAdmin 收紧为仅 ADMIN，
+    // 非管理员若仍看到悬浮球会点开即 403，这里一并按 ADMIN 收起（元素取不到时静默跳过）。
+    const aiFab = document.getElementById('aiFab');
+    if (aiFab) aiFab.style.display = hasRole('ADMIN') ? '' : 'none';
+}
+
+/**
+ * 统一请求封装。
+ *
+ * <p>T05 扩展了两个可选参数（既有调用一行都不用改）：
+ * <ul>
+ *   <li>{@code extraHeaders}：透传额外请求头。小运确认卡片要用
+ *       {@code Idempotency-Key}（防连点）与 {@code X-Proposal-Id}（让服务端找回提案行）。</li>
+ *   <li>{@code raw}：为 true 时返回**完整信封** {@code {code, subCode, message, data}}，
+ *       而不是只返回 {@code data}。卡片必须区分「成功」「已执行过（DUPLICATE_ACTION）」
+ *       「失败」，而默认模式下 {@code code!==0} 会被抛成异常、{@code subCode} 被丢掉，
+ *       分不清这三种情况。</li>
+ * </ul>
+ * 注意：401/403 的处理**在 raw 之前**，所以两种模式下的登录态行为完全一致。
+ */
+async function api(path, method = 'GET', body = null, extraHeaders = null, raw = false) {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    if (extraHeaders && typeof extraHeaders === 'object') {
+        Object.keys(extraHeaders).forEach(k => {
+            const v = extraHeaders[k];
+            // 空值不写进请求头：fetch 会把 null 序列化成字符串 "null"，服务端会当成有效键
+            if (v !== null && v !== undefined && String(v) !== '') headers[k] = String(v);
+        });
+    }
+    const opts = { method, headers, cache: 'no-store' };
+    if (body) opts.body = JSON.stringify(body);
+    const resp = await fetch('/api' + path, opts);
+    if (resp.status === 401) { logout(); throw new Error('登录已过期'); }
+    const json = await resp.json().catch(() => ({}));
+    if (resp.status === 403) throw new Error(json.message || '需要管理员权限');
+    if (raw) return json;
+    if (json.code !== 0) throw new Error(json.message || '请求失败');
+    return json.data;
+}
+
+function toast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '');
+    t.style.display = 'block';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.style.display = 'none', 2500);
+}
+
+function esc(s) {
+    if (s === null || s === undefined) return '-';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtMoney(v) { return v == null ? '-' : '¥' + Number(v).toFixed(2); }
+function fmtTime(t) { return t ? String(t).replace('T', ' ').substring(0, 19) : '-'; }
+
+function roleLabel(r) {
+    return r === 'ADMIN' ? '超级管理员' : r === 'OPS' ? '运营专员' : r === 'CS' ? '客服' : '普通用户';
+}
+function roleBadgeOf(role) {
+    const map = {
+        ADMIN: ['超级管理员', 'red'],
+        OPS:   ['运营专员',   'blue'],
+        CS:    ['客服',       'orange'],
+        USER:  ['普通用户',   'gray']
+    };
+    const e = map[role] || ['未知', 'gray'];
+    return `<span class="badge ${e[1]}">${e[0]}</span>`;
+}
+
+const ORDER_STATUS = { PENDING_PAYMENT:['待付款','orange'], PAID:['待发货','blue'], SHIPPED:['待收货','blue'], COMPLETED:['已完成','green'], CANCELLED:['已取消','gray'], REFUNDING:['退款中','orange'], REFUNDED:['已退款','gray'] };
+const PAY_STATUS = { SUCCESS:['成功','green'], REFUNDED:['已退款','orange'], FAILED:['失败','red'] };
+const PAY_METHOD = { WECHAT:'微信', ALIPAY:'支付宝', BANK:'银行卡', CASH:'现金', BALANCE:'余额支付' };
+const SHIP_STATUS = { SHIPPED:['已发货','blue'], IN_TRANSIT:['运输中','orange'], DELIVERED:['已送达','green'] };
+const PROMO_TYPE = { FULL_REDUCTION:'满减', DISCOUNT:'折扣' };
+const LOW_STOCK_THRESHOLD = 10;
+// 发货时效 SLA（天）—— 与后端 AdminService.SLA_SHIP_DAYS 保持一致，改一处记得同步另一处
+const SLA_SHIP_DAYS = 2;
+
+const SHIP_COMPANIES = [
+    { name: '顺丰速运', prefix: 'SF' },
+    { name: '中通快递', prefix: 'ZT' },
+    { name: '圆通速递', prefix: 'YT' },
+    { name: '韵达快递', prefix: 'YD' },
+    { name: '申通快递', prefix: 'ST' },
+    { name: '京东物流', prefix: 'JD' },
+    { name: '邮政EMS', prefix: 'EMS' },
+    { name: '极兔速递', prefix: 'JT' },
+    { name: '德邦物流', prefix: 'DB' },
+];
+function genTrackingNo(company) {
+    const found = SHIP_COMPANIES.find(c => c.name === company);
+    const prefix = found ? found.prefix : 'SF';
+    const len = prefix === 'EMS' ? 13 : 12;
+    let num = '';
+    for (let i = 0; i < len; i++) num += Math.floor(Math.random() * 10);
+    return prefix + num;
+}
+
+function statusBadge(status, map) {
+    const [label, color] = (map[status] || ['未知','gray']);
+    return `<span class="badge ${color}">${label}</span>`;
+}
+
+// ==================== 图表（D3 SVG） ====================
+const CHART_COLORS = ['var(--primary)', 'var(--chart-2)', 'var(--success-500)', 'var(--warning)', 'var(--info)', 'var(--chart-4)', 'var(--chart-5)', 'var(--text-400)'];
+
+function emptyChart(msg) {
+    return `<div class="empty">${msg || '暂无数据'}</div>`;
+}
+
+function fmtK(v) {
+    if (v >= 10000) return (v / 10000).toFixed(1) + '万';
+    if (v >= 1000) return (v / 1000).toFixed(1) + 'k';
+    return v.toFixed(0);
+}
+
+function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || name;
+}
+
+function themeColor(raw) {
+    return String(raw).startsWith('var(') ? cssVar(raw) : raw;
+}
+
+function donutChart(items, opts = {}) {
+    const data = (items || []).filter(x => (x.value || 0) > 0);
+    if (!data.length) return emptyChart();
+    const total = d3.sum(data, d => d.value);
+    const W = 420, H = 220, radius = 82, cx = 110, cy = H / 2;
+    const color = d3.scaleOrdinal(data.map(d => d.name)).range(CHART_COLORS.map(themeColor));
+
+    const div = d3.create('div').attr('class', 'chart-donut').style('width', '100%');
+    const svg = div.append('svg')
+        .attr('viewBox', `0 0 ${W} ${H}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .style('width', '100%').style('height', 'auto').style('display', 'block');
+
+    const g = svg.append('g').attr('transform', `translate(${cx},${cy})`);
+    const pie = d3.pie().value(d => d.value).sort(null).padAngle(0.03);
+    const arc = d3.arc().innerRadius(radius * 0.62).outerRadius(radius);
+    const arcs = g.selectAll('.arc').data(pie(data)).join('g').attr('class', 'arc');
+    arcs.append('path')
+        .attr('d', arc)
+        .attr('fill', d => color(d.data.name))
+        .attr('stroke', cssVar('--card'))
+        .attr('stroke-width', 2)
+        .append('title').text(d => `${esc(d.data.name)}：${d.data.value}（${((d.endAngle - d.startAngle) / (2 * Math.PI) * 100).toFixed(1)}%）`);
+
+    g.append('text').attr('text-anchor', 'middle').attr('dy', '-0.15em')
+        .attr('font-size', 22).attr('font-weight', 600).attr('fill', cssVar('--foreground')).text(total);
+    g.append('text').attr('text-anchor', 'middle').attr('dy', '1.4em')
+        .attr('font-size', 11).attr('fill', cssVar('--muted-foreground')).text(opts.centerLabel || '总数');
+
+    const legend = svg.append('g').attr('transform', `translate(${cx + radius + 34}, ${cy - data.length * 13})`);
+    const rows = legend.selectAll('.lg').data(data).join('g').attr('transform', (d, i) => `translate(0,${i * 26})`);
+    rows.append('circle').attr('r', 5).attr('fill', d => color(d.name));
+    rows.append('text').attr('x', 12).attr('y', 4).attr('font-size', 12).attr('fill', cssVar('--foreground')).text(d => esc(d.name));
+    rows.append('text').attr('x', 12).attr('y', 16).attr('font-size', 11).attr('fill', cssVar('--muted-foreground'))
+        .text(d => { const pct = (d.value / total * 100).toFixed(1); return `${d.value} · ${pct}%`; });
+
+    return div.node().outerHTML;
+}
+
+function hbarChart(items, opts = {}) {
+    const data = (items || []).filter(x => (x.value || 0) > 0).sort((a, b) => b.value - a.value).slice(0, 14);
+    if (!data.length) return emptyChart();
+    const W = 760, rowH = 30, H = data.length * rowH + 60;
+    const margin = { top: 18, right: 70, bottom: 30, left: 140 };
+    const width = W - margin.left - margin.right, height = H - margin.top - margin.bottom;
+    const barColor = opts.color ? themeColor(opts.color) : cssVar('--primary');
+
+    const div = d3.create('div').attr('class', 'chart-hbar').style('width', '100%');
+    const svg = div.append('svg')
+        .attr('viewBox', `0 0 ${W} ${H}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .style('width', '100%').style('height', 'auto').style('display', 'block');
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleLinear().domain([0, d3.max(data, d => d.value)]).nice().range([0, width]);
+    const y = d3.scaleBand().domain(data.map(d => d.name)).range([0, height]).padding(0.22);
+
+    g.append('g').attr('class', 'grid')
+        .attr('transform', `translate(0,${height})`)
+        .call(d3.axisBottom(x).tickSize(-height).tickFormat(''))
+        .call(g => g.select('.domain').remove())
+        .attr('stroke', cssVar('--border')).attr('stroke-opacity', 0.6);
+
+    g.selectAll('.bar').data(data).join('rect')
+        .attr('class', 'bar')
+        .attr('x', 0).attr('y', d => y(d.name))
+        .attr('width', d => x(d.value)).attr('height', y.bandwidth())
+        .attr('rx', 5).attr('fill', barColor)
+        .append('title').text(d => `${esc(d.name)}：${d.value}`);
+
+    g.selectAll('.label').data(data).join('text')
+        .attr('x', -10).attr('y', d => y(d.name) + y.bandwidth() / 2)
+        .attr('dy', '0.35em').attr('text-anchor', 'end')
+        .attr('font-size', 12).attr('fill', cssVar('--foreground'))
+        .text(d => esc(d.name));
+
+    g.selectAll('.val').data(data).join('text')
+        .attr('x', d => x(d.value) + 8).attr('y', d => y(d.name) + y.bandwidth() / 2)
+        .attr('dy', '0.35em')
+        .attr('font-size', 12).attr('fill', cssVar('--muted-foreground')).text(d => d.value);
+
+    return div.node().outerHTML;
+}
+
+function trendChart(points) {
+    const data = points || [];
+    if (!data.length) return emptyChart();
+
+    trendChart._id = (trendChart._id || 0) + 1;
+    const uid = 'trend-' + trendChart._id;
+    const W = 960, H = 300;
+    const margin = { top: 18, right: 32, bottom: 48, left: 74 };
+    const width = W - margin.left - margin.right, height = H - margin.top - margin.bottom;
+    const primary = cssVar('--primary');
+    const border = cssVar('--border');
+    const muted = cssVar('--muted-foreground');
+
+    // ---- 日环比（对比基准 = 前一个自然日）----
+    // 数据来源：GET /api/admin/dashboard/charts → salesTrend（近 7 个自然日，含今天）。
+    // 每天的 salesAmount 与「最新日销售额」完全同口径：已收款且未退款
+    // （PAID/SHIPPED/COMPLETED/REFUNDING，不含 待付款/已取消/已退款）。
+    // 公式：日环比 = (今日 − 昨日) / 昨日 × 100%
+    // 注意：早先这里误用窗口首日(data[0])当基准，而首日往往是空数据(0)，
+    // 于是 `first ? ... : 0` 一直命中兜底，增长率恒显示 +0.00%。
+    const total = d3.sum(data, d => Number(d.salesAmount) || 0);
+    const latestPoint = data[data.length - 1];
+    const latest = Number(latestPoint && latestPoint.salesAmount) || 0;
+    const prevPoint = data.length >= 2 ? data[data.length - 2] : null;
+    const prev = prevPoint ? (Number(prevPoint.salesAmount) || 0) : null;
+
+    let badgeClass, badgeText, badgeTip;
+    if (prev === null) {
+        // 基准缺失：窗口内不足两天
+        badgeClass = 'gray';
+        badgeText = '无对比基准';
+        badgeTip = '窗口内仅有 1 天数据，无法计算日环比';
+    } else if (prev === 0) {
+        // 分母为 0：环比在数学上无定义（既不是 0%，也不是无穷大），不显示百分比以免误导
+        badgeClass = 'gray';
+        if (latest === 0) {
+            badgeText = '0.00%';
+            badgeTip = `昨日(${prevPoint.date})与今日销售额均为 ¥0.00，环比持平`;
+        } else {
+            badgeText = '环比不可比';
+            badgeTip = `昨日(${prevPoint.date})销售额为 ¥0.00，不能作分母；今日 ¥${latest.toFixed(2)}，环比无法计算`;
+        }
+    } else {
+        const change = ((latest - prev) / prev) * 100;
+        if (change === 0) {
+            // 持平：不带 +/- 号，避免 "+0.00%" 让人误以为在增长
+            badgeClass = 'gray';
+            badgeText = '0.00%';
+            badgeTip = `与前一日 ${prevPoint.date} 持平：均为 ¥${latest.toFixed(2)}`;
+        } else {
+            const up = change > 0;
+            badgeClass = up ? 'green' : 'red';
+            badgeText = `${up ? '+' : ''}${change.toFixed(2)}%`;
+            badgeTip = `较前一日 ${prevPoint.date}：¥${prev.toFixed(2)} → ¥${latest.toFixed(2)}（环比 ${badgeText}）`;
+        }
+    }
+    const badgeCaption = prevPoint ? `较前一日 ${prevPoint.date}` : '较前一日';
+
+    const summary = `
+        <div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+            <div>
+                <div style="font-size:12px;color:${muted};margin-bottom:2px">最新日销售额</div>
+                <div style="font-size:28px;font-weight:700;color:${cssVar('--foreground')};line-height:1.05">${fmtMoney(latest)}</div>
+            </div>
+            <span class="badge ${badgeClass}" style="margin-bottom:6px" title="${badgeTip}">${badgeText}</span>
+            <span style="font-size:12px;color:${muted};margin-bottom:8px">${badgeCaption}</span>
+            <div style="margin-left:auto;text-align:right">
+                <div style="font-size:12px;color:${muted};margin-bottom:2px">7 天累计</div>
+                <div style="font-size:16px;font-weight:600;color:${cssVar('--foreground')}">${fmtMoney(total)}</div>
+            </div>
+        </div>`;
+
+    const div = d3.create('div').style('width', '100%');
+    const svg = div.append('svg')
+        .attr('viewBox', `0 0 ${W} ${H}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .style('width', '100%').style('height', 'auto').style('display', 'block');
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const defs = svg.append('defs');
+    const areaGrad = defs.append('linearGradient').attr('id', `${uid}-area`).attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1);
+    areaGrad.append('stop').attr('offset', '0%').attr('stop-color', primary).attr('stop-opacity', 0.28);
+    areaGrad.append('stop').attr('offset', '100%').attr('stop-color', primary).attr('stop-opacity', 0.02);
+
+    const x = d3.scalePoint().domain(data.map(d => d.date)).range([0, width]).padding(0.06);
+    const maxSales = d3.max(data, d => Number(d.salesAmount) || 0);
+    const ySales = d3.scaleLinear().domain([0, maxSales * 1.15]).nice().range([height, 0]);
+
+    // horizontal grid
+    g.append('g').attr('class', 'grid')
+        .call(d3.axisLeft(ySales).tickSize(-width).tickFormat(''))
+        .call(g => g.select('.domain').remove())
+        .attr('stroke', border).attr('stroke-opacity', 0.35).attr('shape-rendering', 'crispEdges');
+
+    // axes
+    const xAxis = g.append('g').attr('transform', `translate(0,${height})`)
+        .call(d3.axisBottom(x).tickSize(0).tickPadding(12));
+    xAxis.select('.domain').attr('stroke', border);
+    xAxis.selectAll('text').attr('fill', muted).attr('font-size', 11).attr('font-weight', 500);
+
+    const yLeft = g.append('g').call(d3.axisLeft(ySales).ticks(5).tickFormat(d => '¥' + fmtK(d)).tickSize(0).tickPadding(10));
+    yLeft.select('.domain').remove();
+    yLeft.selectAll('text').attr('fill', muted).attr('font-size', 11);
+
+    // area
+    const area = d3.area()
+        .x(d => x(d.date))
+        .y0(height)
+        .y1(d => ySales(Number(d.salesAmount) || 0))
+        .curve(d3.curveMonotoneX);
+    g.append('path').datum(data).attr('fill', `url(#${uid}-area)`).attr('d', area);
+
+    // line
+    const line = d3.line()
+        .x(d => x(d.date))
+        .y(d => ySales(Number(d.salesAmount) || 0))
+        .curve(d3.curveMonotoneX);
+    g.append('path').datum(data).attr('fill', 'none')
+        .attr('stroke', primary).attr('stroke-width', 2.5).attr('stroke-linecap', 'round').attr('d', line);
+
+    // points + tooltips
+    g.selectAll('.dot').data(data).join('circle')
+        .attr('cx', d => x(d.date))
+        .attr('cy', d => ySales(Number(d.salesAmount) || 0))
+        .attr('r', 4).attr('fill', '#fff').attr('stroke', primary).attr('stroke-width', 2)
+        .append('title').text(d => `${d.date} 销售额 ¥${Number(d.salesAmount).toFixed(2)}`);
+
+    return summary + div.html();
+}
+
+// ==================== 模块路由 ====================
+const MODULES = {
+    dashboard: { title: '仪表盘', render: renderDashboard },
+    products: { title: '商品管理', render: renderProducts },
+    orders: { title: '订单管理', render: renderOrders },
+    refunds: { title: '退款管理', render: renderRefunds },
+    risk: { title: '风险监控', render: renderRisk },
+    stock: { title: '库存管理', render: renderStock },
+    members: { title: '会员管理', render: renderMembers },
+    roles: { title: '角色管理', render: renderRoles },
+    permissions: { title: '权限管理', render: renderPermissions },
+    reviews: { title: '评论管理', render: renderReviews },
+    cs: { title: '客服管理', render: renderCs },
+    categories: { title: '分类管理', render: renderCategories },
+    promotions: { title: '促销管理', render: renderPromotions },
+    payments: { title: '支付管理', render: renderPayments },
+    shipments: { title: '物流管理', render: renderShipments },
+    knowledge: { title: 'AI 知识库', render: renderKnowledge },
+};
+
+let currentMod = 'dashboard';
+
+document.getElementById('nav').addEventListener('click', function (e) {
+    const a = e.target.closest('a[data-mod]');
+    if (!a) return;
+    switchMod(a.dataset.mod);
+});
+
+function switchMod(mod) {
+    currentMod = mod;
+    // 离开客服管理页要停掉轮询，否则会在别的页面一直发请求
+    if (csTimer) { clearInterval(csTimer); csTimer = null; }
+    document.querySelectorAll('#nav a').forEach(x => x.classList.toggle('active', x.dataset.mod === mod));
+    document.getElementById('pageTitle').textContent = MODULES[mod].title;
+    document.getElementById('content').innerHTML = '<div class="empty">加载中...</div>';
+    MODULES[mod].render().catch(err => {
+        document.getElementById('content').innerHTML = `<div class="empty">加载失败：${esc(err.message)}</div>`;
+    });
+}
+
+// ==================== 通用表格渲染 ====================
+function renderPanel(headHtml, bodyHtml) {
+    return `<div class="panel"><div class="panel-head">${headHtml}</div><div class="panel-body">${bodyHtml}</div></div>`;
+}
+function headWith(title, btnHtml) {
+    return `<h3>${title}</h3>${btnHtml || ''}`;
+}
+function tableWrap(html, cls) {
+    return `<div class="table-wrap"><table${cls ? ' class="' + cls + '"' : ''}>${html}</table></div>`;
+}
+
+// ==================== 仪表盘 ====================
+async function renderDashboard() {
+    // 退款 / 风险不在 /admin/dashboard 的返回里（该 DTO 只有订单与库存口径），
+    // 需要按权限各自单独拉：退款用与「退款管理」同一个 /admin/refunds（保证口径一致），
+    // 风险用 /admin/risk/summary。无权限时接口返 403 会 throw，故用 catch 兜底，
+    // 否则一个 403 会把整个仪表盘拖垮。
+    const canRefund = hasPerm('order:view', 'cs:manage');
+    const canRisk = hasPerm('risk:view');
+    const [d, c, refunds, risk] = await Promise.all([
+        api('/admin/dashboard'),
+        api('/admin/dashboard/charts'),
+        canRefund ? api('/admin/refunds').catch(() => []) : Promise.resolve([]),
+        canRisk ? api('/admin/risk/summary').catch(() => null) : Promise.resolve(null)
+    ]);
+
+    // ── 退款信息：与「退款管理」同源（/admin/refunds 全量列表），前端聚合出计数与待退金额 ──
+    const refundList = refunds || [];
+    const refundByStatus = { PENDING: 0, APPROVED: 0, REJECTED: 0 };
+    let refundPendingAmount = 0;
+    refundList.forEach(r => {
+        if (refundByStatus[r.status] !== undefined) refundByStatus[r.status]++;
+        if (r.status === 'PENDING') refundPendingAmount += Number(r.amount || 0);
+    });
+
+    // ── 风险订单：/admin/risk/summary → {high, medium, low, unread} ──
+    const riskSum = risk || null;
+    const riskHigh = (riskSum && riskSum.high) || 0;
+    const riskMedium = (riskSum && riskSum.medium) || 0;
+    const riskLow = (riskSum && riskSum.low) || 0;
+    const riskUnread = (riskSum && riskSum.unread) || 0;
+
+    // 两块面板并排放在 chart-grid 里；只剩一块时让它独占整行
+    const bothPanels = canRefund && canRisk;
+    const panelCls = 'panel' + (bothPanels ? '' : ' span-full');
+
+    const refundPanel = !canRefund ? '' : `
+        <div class="${panelCls}">
+            <div class="panel-head">
+                <h3>退款信息</h3>
+                <button class="btn ghost sm" onclick="switchMod('refunds')">前往处理 →</button>
+            </div>
+            <div class="panel-body">
+                <div class="stat-grid tight">
+                    <div class="stat-card"><div class="label">待处理退款</div><div class="value ${refundByStatus.PENDING > 0 ? 'orange' : 'green'}">${refundByStatus.PENDING}</div></div>
+                    <div class="stat-card"><div class="label">待退金额</div><div class="value primary money">${fmtMoney(refundPendingAmount)}</div></div>
+                    <div class="stat-card"><div class="label">已同意</div><div class="value green">${refundByStatus.APPROVED}</div></div>
+                    <div class="stat-card"><div class="label">已拒绝</div><div class="value">${refundByStatus.REJECTED}</div></div>
+                </div>
+                <div class="hint" style="margin:12px 0 0">
+                    累计申请 ${refundList.length} 笔。${refundByStatus.PENDING > 0
+                        ? '待处理申请已计入上方「待退金额」；同意退款后才会真正退回款项、回补库存并返还优惠券。'
+                        : '当前没有待处理的退款申请。'}
+                </div>
+            </div>
+        </div>`;
+
+    const riskPanel = !canRisk ? '' : `
+        <div class="${panelCls}">
+            <div class="panel-head">
+                <h3>风险订单</h3>
+                <button class="btn ghost sm" onclick="switchMod('risk')">前往核查 →</button>
+            </div>
+            <div class="panel-body">
+                <div class="stat-grid tight">
+                    <div class="stat-card"><div class="label">高风险</div><div class="value ${riskHigh > 0 ? 'red' : 'green'}">${riskHigh}</div></div>
+                    <div class="stat-card"><div class="label">中风险</div><div class="value orange">${riskMedium}</div></div>
+                    <div class="stat-card"><div class="label">低风险</div><div class="value blue">${riskLow}</div></div>
+                    <div class="stat-card"><div class="label">未读提醒</div><div class="value ${riskUnread > 0 ? 'primary' : 'green'}">${riskUnread}</div></div>
+                </div>
+                <div class="hint" style="margin:12px 0 0">
+                    风险评分由规则引擎（金额异常 / 短时多单 / 敏感地址 / 首单大额 / 凌晨下单）+ AI 综合判断自动生成。
+                </div>
+            </div>
+        </div>`;
+
+    // ── 超时未发货：后端 /admin/dashboard 一并返回（阈值 AdminService.SLA_SHIP_DAYS = 2 天）──
+    // 起算时间是付款时间，付款时间缺失时后端退化为下单时间。字段缺失一律按 0 处理，保证向后兼容。
+    const overdueCount = d.overdueShipCount || 0;
+    const overdueAmount = d.overdueShipAmount || 0;
+    const overdueOldest = d.oldestOverdueDays || 0;
+    const overdueShips = d.overdueShips || [];
+
+    // 明细面板：只在真的出现超时才渲染，避免空占版面；列表本身就是「提示」要指给人的东西
+    const overduePanel = overdueCount === 0 ? '' : `
+        <div class="panel" style="margin:22px 0;border-color:var(--destructive)">
+            <div class="panel-head">
+                <h3>⏰ 超时未发货（付款后超过 ${SLA_SHIP_DAYS} 天仍未发货）</h3>
+                <button class="btn ghost sm" onclick="switchMod('orders')">前往发货 →</button>
+            </div>
+            <div class="panel-body">
+                ${tableWrap(`<thead><tr>
+                    <th>订单号</th><th>下单用户</th><th>订单金额</th><th>付款时间</th><th>已等待</th>
+                </tr></thead>
+                <tbody>${overdueShips.map(s => `
+                    <tr>
+                        <td>${esc(s.orderNo || '-')}</td>
+                        <td>${esc(s.userName || '-')}</td>
+                        <td><b>${fmtMoney(s.payAmount)}</b></td>
+                        <td>${fmtTime(s.paidAt)}</td>
+                        <td><span class="badge ${s.waitingDays >= 3 ? 'red' : 'orange'}">${s.waitingDays} 天</span></td>
+                    </tr>`).join('')}</tbody>`)}
+                <div class="hint" style="margin:12px 0 0">
+                    共 <b>${overdueCount}</b> 笔超时订单，合计 <b>${fmtMoney(overdueAmount)}</b>${overdueCount > overdueShips.length
+                        ? `；上表仅列出等待最久的 ${overdueShips.length} 笔，完整列表请到「订单管理」查看。`
+                        : '。'}
+                </div>
+            </div>
+        </div>`;
+
+    // ── 运营提示：在原有「待发货 / 低库存」之外，补上退款与风险两条提醒（按权限显示）──
+    const opTips = [
+        d.pendingShipCount > 0
+            ? `<li>有 <b style="color:var(--warning-strong)">${d.pendingShipCount}</b> 笔订单待发货，请及时处理。</li>`
+            : '<li>暂无待发货订单 <span class="badge green">正常</span></li>',
+        overdueCount > 0
+            ? `<li>其中 <b style="color:var(--destructive)">${overdueCount}</b> 笔已超时未发货（付款超过 ${SLA_SHIP_DAYS} 天，最久 <b style="color:var(--destructive)">${overdueOldest}</b> 天，合计 ${fmtMoney(overdueAmount)}），请尽快发货。</li>`
+            : `<li>待发货订单均在 ${SLA_SHIP_DAYS} 天时效内，暂无超时未发货 <span class="badge green">正常</span></li>`,
+        d.lowStockCount > 0
+            ? `<li>有 <b style="color:var(--destructive)">${d.lowStockCount}</b> 件商品库存偏低（≤${LOW_STOCK_THRESHOLD}），请到「库存管理」及时补货。</li>`
+            : '<li>库存健康，无低库存商品 <span class="badge green">正常</span></li>'
+    ];
+    if (canRefund) {
+        opTips.push(refundByStatus.PENDING > 0
+            ? `<li>有 <b style="color:var(--warning-strong)">${refundByStatus.PENDING}</b> 笔退款申请待处理（合计 <b>${fmtMoney(refundPendingAmount)}</b>），请到「退款管理」及时审核。</li>`
+            : '<li>暂无待处理退款申请 <span class="badge green">正常</span></li>');
+    }
+    if (canRisk) {
+        opTips.push(riskUnread > 0
+            ? `<li>有 <b style="color:var(--destructive)">${riskUnread}</b> 条风险订单提醒未读，其中高风险 <b style="color:var(--destructive)">${riskHigh}</b> 条，请到「风险监控」核查并标记已读。</li>`
+            : '<li>风险提醒均已读，暂无待核查风险订单 <span class="badge green">正常</span></li>');
+    }
+    opTips.push('<li>促销、物流等完整运营能力已就绪，可通过左侧菜单操作。</li>');
+
+    document.getElementById('content').innerHTML = `
+        <div class="stat-grid">
+            <div class="stat-card"><div class="label">会员总数</div><div class="value blue">${d.userCount}</div></div>
+            <div class="stat-card"><div class="label">商品总数</div><div class="value">${d.productCount}</div></div>
+            <div class="stat-card"><div class="label">订单总数</div><div class="value">${d.orderCount}</div></div>
+            <div class="stat-card"><div class="label">累计销售额</div><div class="value primary">${fmtMoney(d.totalSales)}</div></div>
+            <div class="stat-card"><div class="label">待付款</div><div class="value orange">${d.pendingPaymentCount}</div></div>
+            <div class="stat-card"><div class="label">待发货</div><div class="value orange">${d.pendingShipCount}</div></div>
+            <div class="stat-card">
+                <div class="label">超时未发货</div>
+                <div class="value ${overdueCount > 0 ? 'red' : 'green'}">${overdueCount}</div>
+                ${overdueCount > 0 ? `<div class="trend">最久 ${overdueOldest} 天 · ${fmtMoney(overdueAmount)}</div>` : '<div class="trend">时效正常</div>'}
+            </div>
+            <div class="stat-card"><div class="label">待收货</div><div class="value blue">${d.shippedCount}</div></div>
+            <div class="stat-card"><div class="label">已完成</div><div class="value green">${d.completedCount}</div></div>
+            <div class="stat-card"><div class="label">评论总数</div><div class="value">${d.reviewCount}</div></div>
+            <div class="stat-card"><div class="label">低库存商品</div><div class="value ${d.lowStockCount > 0 ? 'red' : 'green'}">${d.lowStockCount}</div></div>
+        </div>
+
+        ${overduePanel}
+
+        ${(refundPanel || riskPanel) ? `<div class="chart-grid" style="margin:22px 0">${refundPanel}${riskPanel}</div>` : ''}
+
+        <div class="panel" style="margin:22px 0">
+            <div class="panel-head"><h3>运营提示</h3></div>
+            <div class="panel-body">
+                <ul style="padding-left:20px;line-height:2.2;color:var(--text-600);font-size:14px;">
+                    ${opTips.join('')}
+                </ul>
+            </div>
+        </div>
+
+        <div class="panel" style="margin:22px 0">
+            <div class="panel-head"><h3>快捷操作</h3></div>
+            <div class="panel-body">
+                <div class="toolbar" style="margin-bottom:0">
+                    <button class="btn primary" onclick="switchMod('orders')">📦 处理待发货 (${d.pendingShipCount})</button>
+                    ${overdueCount > 0 ? `<button class="btn danger" onclick="switchMod('orders')">⏰ 超时未发货 (${overdueCount})</button>` : ''}
+                    <button class="btn secondary" onclick="switchMod('stock')">📉 库存预警 (${d.lowStockCount})</button>
+                    <button class="btn secondary" onclick="switchMod('risk')">🛡️ 风险监控</button>
+                    <button class="btn secondary" onclick="switchMod('promotions')">🏷️ 促销活动</button>
+                    <button class="btn ghost" onclick="switchMod('reviews')">💬 评论管理</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="panel span-full">
+                <div class="panel-head"><h3>近 7 天销售趋势</h3></div>
+                <div class="panel-body">${trendChart(c.salesTrend)}</div>
+            </div>
+            <div class="panel">
+                <div class="panel-head"><h3>订单状态分布</h3></div>
+                <div class="panel-body">${donutChart(c.orderStatusDist, { centerLabel: '订单' })}</div>
+            </div>
+            <div class="panel">
+                <div class="panel-head"><h3>支付方式分布</h3></div>
+                <div class="panel-body">${donutChart(c.paymentDist, { centerLabel: '笔数' })}</div>
+            </div>
+            <div class="panel span-full">
+                <div class="panel-head">
+                    <h3>分类商品分布（按一级分类）</h3>
+                    <span style="font-size:12px;color:var(--muted-foreground)">
+                        口径：全部商品（含下架）按所属<b>一级分类</b>上卷统计，各条之和 = 上方「商品总数」
+                    </span>
+                </div>
+                <div class="panel-body">${hbarChart(c.categoryDist)}</div>
+            </div>
+        </div>`;
+}
+
+// ==================== 商品管理 ====================
+async function renderProducts() {
+    const cats = await api('/admin/categories');
+    const products = await api('/admin/products');
+    const catMap = {};
+    cats.forEach(c => catMap[c.id] = c.name);
+
+    document.getElementById('content').innerHTML = renderPanel(
+        headWith('商品管理', `<button class="btn primary sm" id="addProduct">+ 新增商品</button>`),
+        `<div class="toolbar"><input id="pSearch" placeholder="搜索商品名称..." style="width:240px"></div>
+         ${tableWrap(`<thead><tr><th>ID</th><th>商品</th><th>分类</th><th>价格</th><th>库存</th><th>销量</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="pRows"></tbody>`)}`
+    );
+
+    function draw(list) {
+        document.getElementById('pRows').innerHTML = list.map(p => `
+            <tr>
+                <td>${p.id}</td>
+                <td><b>${esc(p.name)}</b><span class="cell-meta">${esc(p.subtitle || '')}</span></td>
+                <td>${esc(catMap[p.categoryId] || p.categoryId)}</td>
+                <td>${fmtMoney(p.price)}${p.originalPrice ? `<span class="cell-meta"><s>${fmtMoney(p.originalPrice)}</s></span>` : ''}</td>
+                <td>${p.stock}</td>
+                <td>${p.sales}</td>
+                <td>${p.status === 1 ? '<span class="badge green">上架</span>' : '<span class="badge gray">下架</span>'}</td>
+                <td><div class="ops">
+                    <button class="btn ghost sm" onclick="editProduct(${p.id})">编辑</button>
+                    <button class="btn ghost sm" onclick="adjustStock(${p.id})">库存</button>
+                    <button class="btn danger sm" onclick="delProduct(${p.id})">删除</button>
+                </div></td>
+            </tr>`).join('') || '<tr><td colspan="8" class="empty">暂无商品</td></tr>';
+    }
+    draw(products);
+
+    document.getElementById('pSearch').addEventListener('input', e => {
+        const kw = e.target.value.trim().toLowerCase();
+        draw(products.filter(p => (p.name || '').toLowerCase().includes(kw) || (p.subtitle || '').toLowerCase().includes(kw)));
+    });
+    document.getElementById('addProduct').onclick = () => openProductModal(null, cats, catMap, reload);
+    window.editProduct = id => openProductModal(products.find(p => p.id === id), cats, catMap, reload);
+    window.delProduct = async id => {
+        if (!confirm('确定删除该商品？')) return;
+        await api('/admin/products/' + id, 'DELETE'); toast('已删除'); reload();
+    };
+    window.adjustStock = id => openStockModal(products.find(p => p.id === id), reload);
+
+    function reload() { switchMod('products'); }
+}
+
+function openProductModal(p, cats, catMap, reload) {
+    const isEdit = !!p;
+    const catOptions = cats.map(c => `<option value="${c.id}" ${p && p.categoryId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+    openModal(isEdit ? '编辑商品' : '新增商品', `
+        <div class="form-row"><label>商品名称 *</label><input id="fName" value="${esc(p ? p.name : '')}" placeholder="如：红富士苹果"></div>
+        <div class="form-row">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+                <label style="margin:0">副标题/卖点</label>
+                <button type="button" class="btn ghost sm" onclick="aiCopyToggle('aiProdPanel')">✨ AI 帮我写</button>
+            </div>
+            <input id="fSubtitle" value="${esc(p ? p.subtitle : '')}" placeholder="如：脆甜多汁 产地直供">
+        </div>
+        <div class="form-row two">
+            <div><label>分类 *</label><select id="fCat">${catOptions}</select></div>
+            <div><label>计量单位</label><input id="fUnit" value="${esc(p ? p.unit || '件' : '件')}"></div>
+        </div>
+        <div class="form-row two">
+            <div><label>现价（元）*</label><input id="fPrice" type="number" step="0.01" value="${p ? p.price : ''}"></div>
+            <div><label>原价（元）</label><input id="fOrigPrice" type="number" step="0.01" value="${p && p.originalPrice ? p.originalPrice : ''}"></div>
+        </div>
+        <div class="form-row two">
+            <div><label>库存 *</label><input id="fStock" type="number" value="${p ? p.stock : 0}"></div>
+            <div><label>状态</label><select id="fStatus">
+                <option value="1" ${!p || p.status === 1 ? 'selected' : ''}>上架</option>
+                <option value="0" ${p && p.status === 0 ? 'selected' : ''}>下架</option>
+            </select></div>
+        </div>
+        <div class="form-row"><label>图片资源名</label><input id="fImage" value="${esc(p ? p.imageUrl : '')}" placeholder="如 p002（对应 App 内置图）"></div>
+        <div class="form-row">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+                <label style="margin:0">商品描述</label>
+                <button type="button" class="btn ghost sm" onclick="aiCopyToggle('aiProdPanel')">✨ AI 帮我写</button>
+            </div>
+            <textarea id="fDesc" placeholder="商品详情介绍">${esc(p ? p.description : '')}</textarea>
+        </div>
+        <div id="aiProdPanel" style="display:none;margin-top:6px;padding:14px;border:1px dashed var(--border);border-radius:var(--radius-md);background:var(--bg-50)"></div>
+    `, async () => {
+        const body = {
+            categoryId: Number(document.getElementById('fCat').value),
+            name: document.getElementById('fName').value.trim(),
+            subtitle: document.getElementById('fSubtitle').value.trim(),
+            unit: document.getElementById('fUnit').value.trim() || '件',
+            price: Number(document.getElementById('fPrice').value),
+            originalPrice: document.getElementById('fOrigPrice').value ? Number(document.getElementById('fOrigPrice').value) : null,
+            stock: Number(document.getElementById('fStock').value),
+            status: Number(document.getElementById('fStatus').value),
+            imageUrl: document.getElementById('fImage').value.trim(),
+            description: document.getElementById('fDesc').value.trim(),
+        };
+        if (!body.name) return toast('请填写商品名称', true);
+        if (!body.categoryId) return toast('请选择分类', true);
+        if (!(body.price >= 0)) return toast('价格无效', true);
+        if (isEdit) await api('/admin/products/' + p.id, 'PUT', body);
+        else await api('/admin/products', 'POST', body);
+        toast(isEdit ? '已更新' : '已新增'); reload();
+    });
+
+    // 内联 AI 文案面板（不嵌套弹窗）：补充说明 + 场景/渠道 + 生成结果
+    aiCopyMount('aiProdPanel', {
+        sceneDefault: 'PRODUCT',
+        channelDefault: 'DETAIL',
+        build: () => ({
+            name: document.getElementById('fName').value.trim(),
+            category: catMap[document.getElementById('fCat').value] || '',
+            price: document.getElementById('fPrice').value !== '' ? Number(document.getElementById('fPrice').value) : null,
+            originalPrice: document.getElementById('fOrigPrice').value !== '' ? Number(document.getElementById('fOrigPrice').value) : null,
+            unit: document.getElementById('fUnit').value.trim(),
+            keywords: document.getElementById('fSubtitle').value.trim(),
+            existing: document.getElementById('fDesc').value.trim(),
+        }),
+        fill: { title: 'fName', subtitle: 'fSubtitle', body: 'fDesc', sellingPoints: 'fSubtitle' },
+    });
+}
+
+function openStockModal(p, reload) {
+    openModal('调整库存 - ' + p.name, `
+        <div class="form-row"><label>当前库存</label><div style="font-size:28px;font-weight:600;color:var(--primary)">${p.stock}</div></div>
+        <div class="form-row"><label>调整数量（正=入库，负=出库）</label><input id="fDelta" type="number" placeholder="如 50 或 -20"></div>
+    `, async () => {
+        const delta = Number(document.getElementById('fDelta').value);
+        if (!delta) return toast('请输入调整数量', true);
+        await api('/admin/products/' + p.id + '/stock', 'PUT', { delta });
+        toast('库存已调整'); reload();
+    });
+}
+
+// ==================== 订单管理 ====================
+const RISK_LEVEL = {
+    HIGH:   { label: '高风险', className: 'risk-badge HIGH' },
+    MEDIUM: { label: '中风险', className: 'risk-badge MEDIUM' },
+    LOW:    { label: '低风险', className: 'risk-badge LOW' }
+};
+function riskBadgeOf(level) {
+    if (!level) return '<span class="risk-badge NONE">未扫描</span>';
+    const cfg = RISK_LEVEL[level];
+    if (!cfg) return `<span class="risk-badge NONE">${level}</span>`;
+    return `<span class="${cfg.className}">${cfg.label}</span>`;
+}
+
+async function renderOrders() {
+    document.getElementById('content').innerHTML = renderPanel(
+        headWith('订单管理'),
+        `<div class="toolbar">
+            <select id="oFilter"><option value="">全部状态</option>
+                ${Object.entries(ORDER_STATUS).map(([k,v]) => `<option value="${k}">${v[0]}</option>`).join('')}
+            </select>
+            <select id="oRiskFilter">
+                <option value="">全部风险</option>
+                <option value="HIGH">🔴 高风险</option>
+                <option value="MEDIUM">🟠 中风险</option>
+                <option value="LOW">🟢 低风险</option>
+                <option value="UNSCANNED">⚪ 未扫描</option>
+            </select>
+            <button class="btn ghost sm" id="oBatchScan">🔍 批量风险扫描</button>
+         </div>
+         ${tableWrap(`<thead><tr><th>订单号</th><th>金额</th><th>状态</th><th>风险</th><th>收货人</th><th>下单时间</th><th>操作</th></tr></thead>
+            <tbody id="oRows"></tbody>`)}`
+    );
+
+    let all = await api('/admin/orders');
+    function draw(list) {
+        document.getElementById('oRows').innerHTML = list.map(o => `
+            <tr>
+                <td>${esc(o.orderNo)}</td>
+                <td>${fmtMoney(o.payAmount)}${o.discountAmount > 0 ? `<span class="cell-meta" style="color:var(--destructive)">优惠 -${fmtMoney(o.discountAmount)}</span>` : ''}</td>
+                <td>${statusBadge(o.status, ORDER_STATUS)}</td>
+                <td>
+                    ${riskBadgeOf(o.riskLevel)}
+                    ${o.riskScore != null ? `<span class="cell-meta">${o.riskScore} 分</span>` : ''}
+                </td>
+                <td>${esc(o.receiverName || '-')}<span class="cell-meta">${esc(o.receiverPhone || '')}</span></td>
+                <td>${fmtTime(o.createdAt)}</td>
+                <td><div class="ops">
+                    <button class="btn ghost sm" onclick="viewOrder(${o.id})">详情</button>
+                    ${o.status === 'PAID' ? `<button class="btn primary sm" onclick="shipOrder(${o.id})">发货</button>` : ''}
+                    <button class="btn ghost sm" onclick="scanSingleOrder(${o.id})" title="对该订单重新跑风险扫描">🔍 扫描</button>
+                </div></td>
+            </tr>`).join('') || '<tr><td colspan="7" class="empty">暂无订单</td></tr>';
+        window._orders = all;
+    }
+    draw(all);
+
+    document.getElementById('oFilter').onchange = async e => {
+        const s = e.target.value;
+        all = await api('/admin/orders' + (s ? '?status=' + s : ''));
+        applyOrderFilters();
+    };
+    document.getElementById('oRiskFilter').onchange = () => applyOrderFilters();
+    document.getElementById('oBatchScan').onclick = batchScanOrders;
+
+    function applyOrderFilters() {
+        const r = document.getElementById('oRiskFilter').value;
+        if (!r) return draw(all);
+        let filtered;
+        if (r === 'UNSCANNED') filtered = all.filter(o => !o.riskLevel);
+        else filtered = all.filter(o => o.riskLevel === r);
+        draw(filtered);
+    }
+
+    window.scanSingleOrder = async id => {
+        if (!hasPerm('risk:scan')) return toast('无 risk:scan 权限', true);
+        try {
+            const dto = await api('/admin/risk/orders/' + id + '/scan', 'POST');
+            toast('扫描完成：' + dto.level + '（' + dto.score + ' 分）');
+            all = await api('/admin/orders');
+            applyOrderFilters();
+        } catch (e) { toast(e.message, true); }
+    };
+
+    async function batchScanOrders() {
+        if (!hasPerm('risk:scan')) return toast('无 risk:scan 权限', true);
+        const btn = document.getElementById('oBatchScan');
+        btn.disabled = true; btn.textContent = '⏳ 扫描中...';
+        try {
+            const data = await api('/admin/risk/orders/batch-scan?limit=30', 'POST');
+            toast('已扫描 ' + data.scanned + ' 条订单');
+            all = await api('/admin/orders');
+            applyOrderFilters();
+            refreshRiskUnread();
+        } catch (e) { toast(e.message, true); }
+        btn.disabled = false; btn.textContent = '🔍 批量风险扫描';
+    }
+
+    window.shipOrder = id => {
+        const companyOptions = SHIP_COMPANIES.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        openModal('订单发货', `
+            <div class="form-row"><label>物流公司 *</label><select id="fCompany">${companyOptions}</select></div>
+            <div class="form-row"><label>运单号 *</label>
+                <div style="display:flex;gap:10px">
+                    <input id="fTracking" readonly style="flex:1;background:var(--bg-100);color:var(--muted-foreground)">
+                    <button type="button" class="btn ghost sm" id="fRegen">换一个</button>
+                </div>
+                <div class="hint">运单号已按所选物流公司随机生成，可点击「换一个」重新生成</div>
+            </div>
+            <div class="form-row"><label>备注</label><input id="fRemark" placeholder="可选"></div>
+        `, async () => {
+            const company = document.getElementById('fCompany').value;
+            const trackingNo = document.getElementById('fTracking').value.trim();
+            if (!trackingNo) return toast('请生成运单号', true);
+            await api('/admin/orders/' + id + '/ship', 'PUT', { company, trackingNo, remark: document.getElementById('fRemark').value.trim() });
+            toast('已发货'); switchMod('orders');
+        });
+
+        const fCompany = document.getElementById('fCompany');
+        const fTracking = document.getElementById('fTracking');
+        const refreshTracking = () => { fTracking.value = genTrackingNo(fCompany.value); };
+        refreshTracking();
+        fCompany.onchange = refreshTracking;
+        document.getElementById('fRegen').onclick = refreshTracking;
+    };
+    window.viewOrder = id => {
+        const o = window._orders.find(x => x.id === id);
+        if (!o) return;
+        const items = (o.items || []).map(i => `<tr><td>${esc(i.productName)}</td><td>${fmtMoney(i.price)}</td><td>${i.quantity}</td><td>${fmtMoney(i.subtotal)}</td></tr>`).join('');
+        openModal('订单详情 ' + o.orderNo, `
+            <div style="font-size:13px;line-height:2.2;color:var(--text-600)">
+                <div>状态：${statusBadge(o.status, ORDER_STATUS)}</div>
+                <div>商品总额：${fmtMoney(o.totalAmount)}　优惠：-${fmtMoney(o.discountAmount)}　<b style="color:var(--foreground)">实付：${fmtMoney(o.payAmount)}</b></div>
+                <div>收货人：${esc(o.receiverName || '-')}　${esc(o.receiverPhone || '')}</div>
+                <div>收货地址：${esc(o.receiverAddress || '-')}</div>
+                ${o.remark ? `<div>备注：${esc(o.remark)}</div>` : ''}
+                <div>下单：${fmtTime(o.createdAt)}　支付：${fmtTime(o.paidAt)}　发货：${fmtTime(o.shippedAt)}　完成：${fmtTime(o.completedAt)}</div>
+            </div>
+            ${tableWrap(`<thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr></thead><tbody>${items}</tbody>`)}
+        `, null, true);
+    };
+}
+
+// ==================== 退款管理 ====================
+// 用户在前台「退款/售后」提交申请 → 订单置 REFUNDING（退款中，钱不退）→ 商家在这里审核。
+// 点「同意退款」才真正执行退回：回补库存与销量、返还优惠券、支付流水置已退款、订单置已退款。
+// 点「拒绝」则把订单恢复到申请前的状态（后端 previousStatus），用户可继续正常收货/评价。
+const REFUND_STATUS = { PENDING:['待处理','orange'], APPROVED:['已同意','green'], REJECTED:['已拒绝','gray'] };
+
+/** 侧边栏「退款管理」待处理红点。 */
+async function refreshRefundUnread() {
+    const badge = document.getElementById('refundUnreadBadge');
+    if (!badge) return;
+    if (!hasPerm('order:view', 'cs:manage')) { badge.style.display = 'none'; return; }
+    try {
+        const s = await api('/admin/refunds/pending-count');
+        const n = (s && s.pending) || 0;
+        badge.textContent = n > 99 ? '99+' : n;
+        badge.style.display = n > 0 ? 'inline-block' : 'none';
+    } catch (e) {
+        // 静默：红点失败不该打扰使用
+    }
+}
+
+async function renderRefunds() {
+    document.getElementById('content').innerHTML = renderPanel(
+        headWith('退款管理'),
+        `<div class="toolbar">
+            <select id="rFilter"><option value="">全部状态</option>
+                ${Object.entries(REFUND_STATUS).map(([k,v]) => `<option value="${k}">${v[0]}</option>`).join('')}
+            </select>
+            <span style="align-self:center;font-size:12px;color:var(--muted-foreground)">
+                同意退款会同时回补库存、返还优惠券，并把支付流水置为「已退款」</span>
+         </div>
+         ${tableWrap(`<thead><tr><th>订单号</th><th>申请人</th><th>退款金额</th><th>商品</th><th>退款原因</th><th>申请时间</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="rRows"></tbody>`)}`
+    );
+
+    async function load(status) {
+        const list = await api('/admin/refunds' + (status ? '?status=' + status : ''));
+        window._refunds = list;
+        document.getElementById('rRows').innerHTML = list.map(r => `
+            <tr>
+                <td>${esc(r.orderNo || '-')}</td>
+                <td>${esc(r.userName || '-')}<span class="cell-meta">${esc(r.userPhone || '')}</span></td>
+                <td><b>${fmtMoney(r.amount)}</b></td>
+                <td>${esc(r.products || '-')}</td>
+                <td>${esc(r.reason || '-')}${r.rejectReason ? `<span class="cell-meta" style="color:var(--destructive)">拒绝理由：${esc(r.rejectReason)}</span>` : ''}</td>
+                <td>${fmtTime(r.createdAt)}</td>
+                <td>${statusBadge(r.status, REFUND_STATUS)}
+                    ${r.status === 'PENDING' && r.previousStatusLabel ? `<span class="cell-meta">申请前：${esc(r.previousStatusLabel)}</span>` : ''}</td>
+                <td><div class="ops">
+                    ${r.status === 'PENDING'
+                        ? `<button class="btn primary sm" onclick="approveRefund(${r.id})">同意退款</button>
+                           <button class="btn danger sm" onclick="rejectRefund(${r.id})">拒绝</button>`
+                        : '<span class="cell-meta">已处理</span>'}
+                </div></td>
+            </tr>`).join('') || '<tr><td colspan="8" class="empty">暂无退款申请</td></tr>';
+    }
+    await load('');
+    document.getElementById('rFilter').onchange = e => load(e.target.value);
+
+    window.approveRefund = async id => {
+        const r = (window._refunds || []).find(x => x.id === id);
+        if (!confirm(`确认同意退款 ${fmtMoney(r ? r.amount : 0)}？\n\n同意后将回补库存、返还优惠券，并把支付流水置为「已退款」，操作不可撤销。`)) return;
+        try {
+            await api('/admin/refunds/' + id + '/approve', 'POST');
+            toast('已同意退款，款项已退回');
+            await load(document.getElementById('rFilter').value);
+            refreshRefundUnread();
+        } catch (e) { toast(e.message, true); }
+    };
+
+    window.rejectRefund = id => {
+        openModal('拒绝退款申请', `
+            <div class="form-row"><label>拒绝理由 *</label>
+                <input id="fRejectReason" placeholder="如：商品已发出，请收到后申请退货">
+                <div class="hint">拒绝后订单会恢复到申请前的状态，用户可继续正常收货 / 评价。</div>
+            </div>
+        `, async () => {
+            const reason = document.getElementById('fRejectReason').value.trim();
+            if (!reason) return toast('请填写拒绝理由', true);
+            await api('/admin/refunds/' + id + '/reject', 'POST', { reason });
+            toast('已拒绝该退款申请');
+            await load(document.getElementById('rFilter').value);
+            refreshRefundUnread();
+        });
+    };
+}
+
+// ==================== 库存管理 ====================
+async function renderStock() {
+    const low = await api('/admin/products/low-stock');
+    const products = await api('/admin/products');
+    document.getElementById('content').innerHTML = `
+        <div class="stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+            <div class="stat-card"><div class="label">低库存商品数</div><div class="value ${low.length > 0 ? 'red' : 'green'}">${low.length}</div></div>
+            <div class="stat-card"><div class="label">商品总数</div><div class="value">${products.length}</div></div>
+        </div>
+        ${renderPanel(headWith('低库存预警（库存 ≤ ' + LOW_STOCK_THRESHOLD + '）'), tableWrap(`<thead><tr><th>ID</th><th>商品</th><th>当前库存</th><th>销量</th><th>操作</th></tr></thead>
+            <tbody>${low.map(p => `<tr>
+                <td>${p.id}</td><td><b>${esc(p.name)}</b></td>
+                <td><span class="badge red">${p.stock}</span></td><td>${p.sales}</td>
+                <td><button class="btn primary sm" onclick="stockAdd(${p.id}, '${esc(p.name)}')">补货</button></td>
+            </tr>`).join('') || '<tr><td colspan="5" class="empty">无低库存商品 <span class="badge green">正常</span></td></tr>'}</tbody>`))}`;
+
+    window.stockAdd = (id, name) => openStockModal(products.find(p => p.id === id), () => switchMod('stock'));
+}
+
+// ==================== 会员管理 ====================
+async function renderMembers() {
+    const users = await api('/admin/users');
+    document.getElementById('content').innerHTML = renderPanel(
+        headWith('会员管理'),
+        `<div class="toolbar"><input id="mSearch" placeholder="搜索用户名/昵称..." style="width:240px"></div>
+         ${tableWrap(`<thead><tr><th>ID</th><th>用户名</th><th>昵称</th><th>手机号</th><th>角色</th><th>状态</th><th>注册时间</th><th>操作</th></tr></thead>
+            <tbody id="mRows"></tbody>`)}`
+    );
+
+    function draw(list) {
+        document.getElementById('mRows').innerHTML = list.map(u => {
+            const roleBadge = roleBadgeOf(u.role);
+            return `
+            <tr>
+                <td>${u.id}</td><td>${esc(u.username)}</td><td>${esc(u.nickname || '-')}</td><td>${esc(u.phone || '-')}</td>
+                <td>${roleBadge}</td>
+                <td>${u.status === 1 ? '<span class="badge green">正常</span>' : '<span class="badge gray">禁用</span>'}</td>
+                <td>${fmtTime(u.createdAt)}</td>
+                <td><div class="ops">
+                    ${hasRole('ADMIN') ? `<button class="btn ghost sm" onclick="toggleUser(${u.id}, ${u.status})">${u.status === 1 ? '禁用' : '启用'}</button>` : ''}
+                    ${hasRole('ADMIN') ? `<button class="btn ghost sm" onclick="openChangeRole(${u.id}, '${u.role}')">切换角色</button>` : ''}
+                    ${!hasRole('ADMIN') ? '<span class="text-muted" style="font-size:12px">（只读）</span>' : ''}
+                </div></td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="8" class="empty">暂无用户</td></tr>';
+    }
+    draw(users);
+    document.getElementById('mSearch').addEventListener('input', e => {
+        const kw = e.target.value.trim().toLowerCase();
+        draw(users.filter(u => (u.username || '').toLowerCase().includes(kw) || (u.nickname || '').toLowerCase().includes(kw)));
+    });
+    window.toggleUser = async (id, cur) => { await api('/admin/users/' + id + '/status', 'PUT', { status: cur === 1 ? 0 : 1 }); toast('已更新'); switchMod('members'); };
+    window.openChangeRole = (id, cur) => {
+        const user = (users || []).find(x => x.id === id);
+        const userLabel = user ? (user.username + (user.nickname ? '（' + user.nickname + '）' : '')) : ('#' + id);
+        const roles = [
+            { v: 'USER',  label: '普通用户' },
+            { v: 'OPS',   label: '运营专员' },
+            { v: 'CS',    label: '客服' },
+            { v: 'ADMIN', label: '超级管理员' }
+        ];
+        const radios = roles.map(r => `
+            <label class="form-row inline" style="padding:4px 0">
+                <input type="radio" name="rolePick" value="${r.v}" ${r.v === cur ? 'checked' : ''}>
+                <span>${r.label}</span>
+                ${r.v === cur ? '<span class="text-muted" style="font-size:12px">（当前）</span>' : ''}
+            </label>`).join('');
+        const html = `
+            <div class="hint" style="margin-bottom:12px">
+                为用户 <b>${esc(userLabel)}</b> 选择新角色（立即生效，下次请求即按新角色鉴权）
+            </div>
+            <form id="rolePickForm" style="display:flex;flex-direction:column;gap:2px">${radios}</form>`;
+        openModal('切换用户角色', html, async () => {
+            const v = (document.querySelector('input[name="rolePick"]:checked') || {}).value;
+            if (!v) { toast('请选择角色', true); return; }
+            if (v === 'ADMIN' && cur !== 'ADMIN') {
+                if (!confirm(`⚠️ 确认将「${userLabel}」升级为「超级管理员」？\n该操作将授予该账号全部管理权限（包括编辑/删除商品、修改其他用户角色等高危操作）。`)) return;
+            } else if (v !== 'ADMIN' && cur === 'ADMIN') {
+                if (!confirm(`⚠️ 确认将「${userLabel}」从「超级管理员」降级为「${roleLabel(v)}」？\n该账号将立即失去全部管理权限（系统会校验至少保留 1 名管理员）。`)) return;
+            }
+            try {
+                await api('/admin/users/' + id + '/role', 'PUT', { role: v });
+                toast('角色已更新为 ' + roleLabel(v));
+                closeModal();
+                switchMod('members');
+            } catch (e) { toast(e.message, true); }
+        }, false, '保存', '取消');
+    };
+}
+
+// ==================== 角色管理 ====================
+async function renderRoles() {
+    const [roles, perms] = await Promise.all([
+        api('/admin/rbac/roles'),
+        api('/admin/rbac/permissions')
+    ]);
+    const permCount = async roleId => {
+        try {
+            const arr = await api('/admin/rbac/roles/' + roleId + '/permissions');
+            return Array.isArray(arr) ? arr.length : 0;
+        }
+        catch (e) { return 0; }
+    };
+    const counts = {};
+    await Promise.all(roles.map(async r => { counts[r.id] = await permCount(r.id); }));
+    const STATUS = { 1: ['启用', 'green'], 0: ['禁用', 'gray'] };
+    document.getElementById('content').innerHTML = `
+        ${renderPanel(headWith('角色管理', `<button class="btn primary sm" id="addRole">+ 新增角色</button>`), `
+        ${tableWrap(`<thead><tr><th>ID</th><th>编码</th><th>名称</th><th>描述</th><th>已分配权限</th><th>数据范围</th><th>排序</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+            <tbody>${roles.map(r => `
+                <tr>
+                    <td>${r.id}</td>
+                    <td><b>${esc(r.code)}</b></td>
+                    <td>${esc(r.name)}</td>
+                    <td style="color:var(--muted-foreground);max-width:240px">${esc(r.description || '-')}</td>
+                    <td><span class="badge blue">${counts[r.id] || 0} 项</span></td>
+                    <td>${r.dataScope || 'ALL'}</td>
+                    <td>${r.sortOrder}</td>
+                    <td>${(STATUS[r.status] || STATUS[0])[0] === '启用' ? '<span class="badge green">启用</span>' : '<span class="badge gray">禁用</span>'}</td>
+                    <td>${fmtTime(r.createdAt)}</td>
+                    <td><div class="ops">
+                        <button class="btn ghost sm" onclick="openRolePerms(${r.id}, '${esc(r.name)}')">分配权限</button>
+                        <button class="btn ghost sm" onclick="editRole(${r.id})">编辑</button>
+                        <button class="btn danger sm" onclick="delRole(${r.id}, '${esc(r.code)}')">删除</button>
+                    </div></td>
+                </tr>`).join('') || '<tr><td colspan="10" class="empty">暂无角色</td></tr>'}
+            </tbody>`)}`)}`;
+
+    document.getElementById('addRole').onclick = () => openRoleForm(null, perms);
+    window.editRole = id => {
+        const r = roles.find(x => x.id === id);
+        if (r) openRoleForm(r, perms);
+    };
+    window.delRole = async (id, code) => {
+        if (!confirm('确认删除角色「' + code + '」？将同时解除其全部权限关联（请确保已无用户使用该角色）。')) return;
+        try { await api('/admin/rbac/roles/' + id, 'DELETE'); toast('已删除'); renderRoles(); }
+        catch (e) { toast(e.message, true); }
+    };
+
+    function openRoleForm(r, allPerms) {
+        const isEdit = !!r;
+        const fields = `
+            <div class="form-row"><label>编码</label><input id="r_code" value="${esc(r?.code || '')}" ${isEdit ? 'disabled placeholder="编码不可修改"' : 'placeholder="如 ADMIN / OPS / CS / USER"'}></div>
+            <div class="form-row"><label>名称</label><input id="r_name" value="${esc(r?.name || '')}" placeholder="中文展示名"></div>
+            <div class="form-row"><label>描述</label><input id="r_desc" value="${esc(r?.description || '')}" placeholder="角色用途说明"></div>
+            <div class="form-row two">
+                <div><label>排序</label><input id="r_sort" type="number" value="${r?.sortOrder ?? 0}"></div>
+                <div><label>数据范围</label>
+                    <select id="r_scope">
+                        <option value="ALL"  ${(r?.dataScope || 'ALL') === 'ALL' ? 'selected' : ''}>全部 (ALL)</option>
+                        <option value="DEPT" ${r?.dataScope === 'DEPT' ? 'selected' : ''}>本部门 (DEPT)</option>
+                        <option value="SELF" ${r?.dataScope === 'SELF' ? 'selected' : ''}>仅本人 (SELF)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row"><label>状态</label>
+                <select id="r_status">
+                    <option value="1" ${(r?.status ?? 1) === 1 ? 'selected' : ''}>启用</option>
+                    <option value="0" ${r?.status === 0 ? 'selected' : ''}>禁用</option>
+                </select>
+            </div>`;
+        openModal(isEdit ? '编辑角色' : '新增角色', fields, async () => {
+            const body = {
+                code: document.getElementById('r_code').value.trim(),
+                name: document.getElementById('r_name').value.trim(),
+                description: document.getElementById('r_desc').value.trim(),
+                sortOrder: Number(document.getElementById('r_sort').value) || 0,
+                dataScope: document.getElementById('r_scope').value,
+                status: Number(document.getElementById('r_status').value)
+            };
+            if (!body.name) { toast('请输入名称', true); return; }
+            try {
+                if (isEdit) await api('/admin/rbac/roles/' + r.id, 'PUT', body);
+                else await api('/admin/rbac/roles', 'POST', body);
+                toast('已保存'); closeModal(); renderRoles();
+            } catch (e) { toast(e.message, true); }
+        }, false, '保存', '取消');
+    }
+
+    window.openRolePerms = async (roleId, roleName) => {
+        let assigned = [];
+        try { assigned = Array.from(await api('/admin/rbac/roles/' + roleId + '/permissions')); }
+        catch (e) { toast('获取已分配权限失败：' + e.message, true); return; }
+        const set = new Set(assigned);
+        const byMod = {};
+        for (const p of perms) {
+            (byMod[p.module || '其他'] = byMod[p.module || '其他'] || []).push(p);
+        }
+        const groups = Object.entries(byMod).map(([mod, list]) => `
+            <fieldset style="border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:12px">
+                <legend style="padding:0 8px;color:var(--muted-foreground);font-size:12px;font-weight:600">${esc(mod)}</legend>
+                ${list.map(p => `
+                    <label class="form-row inline" style="margin:4px 16px 4px 0;font-size:13px">
+                        <input type="checkbox" name="permPick" value="${p.id}" ${set.has(p.id) ? 'checked' : ''}>
+                        <span>${esc(p.name)}</span>
+                        <span class="text-muted" style="font-size:11px">${esc(p.code)}</span>
+                    </label>`).join('')}
+            </fieldset>`).join('');
+        const html = `
+            <div class="hint" style="margin-bottom:12px">
+                为角色 <b>${esc(roleName)}</b> 分配权限（勾选即生效，覆盖现有全部授权）
+            </div>
+            <form id="permPickForm">${groups}</form>
+            <div style="margin-top:10px"><button type="button" class="btn ghost sm" id="selAll">全选</button>
+            <button type="button" class="btn ghost sm" id="selNone">清空</button></div>`;
+        openModal('分配权限 · ' + roleName, html, async () => {
+            const ids = Array.from(document.querySelectorAll('input[name="permPick"]:checked')).map(x => Number(x.value));
+            try {
+                await api('/admin/rbac/roles/' + roleId + '/permissions', 'PUT', { permissionIds: ids });
+                toast('已保存「' + roleName + '」共 ' + ids.length + ' 项权限');
+                closeModal(); renderRoles();
+            } catch (e) { toast(e.message, true); }
+        }, false, '保存', '取消');
+        document.getElementById('selAll').onclick = () => document.querySelectorAll('input[name="permPick"]').forEach(x => x.checked = true);
+        document.getElementById('selNone').onclick = () => document.querySelectorAll('input[name="permPick"]').forEach(x => x.checked = false);
+    };
+}
+
+// ==================== 权限管理 ====================
+async function renderPermissions() {
+    const perms = await api('/admin/rbac/permissions');
+    const TYPE = { MENU: '菜单', BUTTON: '按钮', API: '接口' };
+    document.getElementById('content').innerHTML = `
+        ${renderPanel(headWith('权限管理', `<button class="btn primary sm" id="addPerm">+ 新增权限</button>`), `
+        ${tableWrap(`<thead><tr><th>ID</th><th>编码</th><th>名称</th><th>模块</th><th>类型</th><th>排序</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+            <tbody>${perms.map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td><b>${esc(p.code)}</b></td>
+                    <td>${esc(p.name)}</td>
+                    <td>${p.module ? `<span class="badge blue">${esc(p.module)}</span>` : '-'}</td>
+                    <td>${TYPE[p.type] || p.type}</td>
+                    <td>${p.sortOrder}</td>
+                    <td>${p.status === 1 ? '<span class="badge green">启用</span>' : '<span class="badge gray">禁用</span>'}</td>
+                    <td>${fmtTime(p.createdAt)}</td>
+                    <td><div class="ops">
+                        <button class="btn ghost sm" onclick="editPerm(${p.id})">编辑</button>
+                        <button class="btn danger sm" onclick="delPerm(${p.id}, '${esc(p.code)}')">删除</button>
+                    </div></td>
+                </tr>`).join('') || '<tr><td colspan="9" class="empty">暂无权限</td></tr>'}
+            </tbody>`)}`)}`;
+
+    document.getElementById('addPerm').onclick = () => openPermForm(null);
+    window.editPerm = id => {
+        const p = perms.find(x => x.id === id);
+        if (p) openPermForm(p);
+    };
+    window.delPerm = async (id, code) => {
+        if (!confirm('确认删除权限「' + code + '」？将同时解除所有角色对该权限的关联。')) return;
+        try { await api('/admin/rbac/permissions/' + id, 'DELETE'); toast('已删除'); renderPermissions(); }
+        catch (e) { toast(e.message, true); }
+    };
+
+    function openPermForm(p) {
+        const isEdit = !!p;
+        const fields = `
+            <div class="form-row"><label>编码</label><input id="p_code" value="${esc(p?.code || '')}" ${isEdit ? 'disabled' : ''} placeholder="如 product:view"></div>
+            <div class="form-row"><label>名称</label><input id="p_name" value="${esc(p?.name || '')}" placeholder="中文展示名"></div>
+            <div class="form-row"><label>模块</label><input id="p_module" value="${esc(p?.module || '')}" placeholder="如 商品 / 订单 / 评论"></div>
+            <div class="form-row two">
+                <div><label>类型</label>
+                    <select id="p_type">
+                        <option value="MENU"   ${(p?.type || 'MENU') === 'MENU' ? 'selected' : ''}>菜单</option>
+                        <option value="BUTTON" ${p?.type === 'BUTTON' ? 'selected' : ''}>按钮</option>
+                        <option value="API"    ${p?.type === 'API' ? 'selected' : ''}>接口</option>
+                    </select>
+                </div>
+                <div><label>排序</label><input id="p_sort" type="number" value="${p?.sortOrder ?? 0}"></div>
+            </div>
+            <div class="form-row"><label>状态</label>
+                <select id="p_status">
+                    <option value="1" ${(p?.status ?? 1) === 1 ? 'selected' : ''}>启用</option>
+                    <option value="0" ${p?.status === 0 ? 'selected' : ''}>禁用</option>
+                </select>
+            </div>`;
+        openModal(isEdit ? '编辑权限' : '新增权限', fields, async () => {
+            const body = {
+                code: document.getElementById('p_code').value.trim(),
+                name: document.getElementById('p_name').value.trim(),
+                module: document.getElementById('p_module').value.trim(),
+                type: document.getElementById('p_type').value,
+                sortOrder: Number(document.getElementById('p_sort').value) || 0,
+                status: Number(document.getElementById('p_status').value)
+            };
+            if (!body.name) { toast('请输入名称', true); return; }
+            try {
+                if (isEdit) await api('/admin/rbac/permissions/' + p.id, 'PUT', body);
+                else await api('/admin/rbac/permissions', 'POST', body);
+                toast('已保存'); closeModal(); renderPermissions();
+            } catch (e) { toast(e.message, true); }
+        }, false, '保存', '取消');
+    }
+}
+
+// ==================== 风险监控 ====================
+async function refreshRiskUnread() {
+    const badge = document.getElementById('riskUnreadBadge');
+    if (!badge) return;
+    if (!hasPerm('risk:view')) { badge.style.display = 'none'; return; }
+    try {
+        const summary = await api('/admin/risk/summary');
+        const n = summary.unread || 0;
+        if (n > 0) {
+            badge.textContent = n > 99 ? '99+' : n;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    } catch (e) { }
+}
+
+async function renderRisk() {
+    const summary = await api('/admin/risk/summary');
+    const overview = `
+        <div class="risk-overview">
+            <div class="stat high"><div class="num">${summary.high || 0}</div><div class="lbl">🔴 高风险</div></div>
+            <div class="stat medium"><div class="num">${summary.medium || 0}</div><div class="lbl">🟠 中风险</div></div>
+            <div class="stat low"><div class="num">${summary.low || 0}</div><div class="lbl">🟢 低风险</div></div>
+            <div class="stat unread"><div class="num">${summary.unread || 0}</div><div class="lbl">📩 未读</div></div>
+        </div>`;
+
+    document.getElementById('content').innerHTML = renderPanel(
+        headWith('风险监控'),
+        `<div class="hint" style="margin-bottom:14px">
+            自动对新订单跑风险评分：规则引擎（金额异常/短时多单/地址敏感词/首单大额/凌晨下单）+ DeepSeek 综合判断。
+            失败的扫描会回退到规则结果，不影响核心风控。
+        </div>
+        <div class="toolbar">
+            <select id="rLevel">
+                <option value="ALL">全部等级</option>
+                <option value="HIGH">🔴 高风险</option>
+                <option value="MEDIUM">🟠 中风险</option>
+                <option value="LOW">🟢 低风险</option>
+            </select>
+            <button class="btn primary sm" id="rBatchScan">🔍 批量扫描最近订单</button>
+            <button class="btn ghost sm" id="rMarkAllRead"
+                title="${(summary.unread || 0) > 0 ? '把当前所有未读风险消息标记为已读（不改分数与等级）' : '当前没有未读风险消息'}"
+                ${(summary.unread || 0) > 0 ? '' : 'disabled'}>✅ 全部标为已读</button>
+        </div>` + overview +
+        `${tableWrap(`<thead><tr>
+                <th>评分</th><th>等级</th><th>建议</th><th>来源</th><th>订单编号</th><th>扫描时间</th><th>操作</th>
+            </tr></thead>
+            <tbody id="rRows"></tbody>`)}`
+    );
+
+    let all = await api('/admin/risk/scores');
+
+    function draw(list) {
+        document.getElementById('rRows').innerHTML = list.map(r => `
+            <tr ${r.isRead ? '' : 'style="background:var(--brand-50)"'}>
+                <td><b style="color:${r.level === 'HIGH' ? 'var(--destructive)' : r.level === 'MEDIUM' ? 'var(--warning-strong)' : 'var(--success-500)'}">${r.score}</b></td>
+                <td>${riskBadgeOf(r.level)}${r.isRead ? '' : ' <span style="color:var(--destructive);font-size:11px">●</span>'}</td>
+                <td>${esc(r.suggestedAction || '-')}</td>
+                <td><span style="font-size:11px;color:var(--muted-foreground)">${r.source}</span></td>
+                <td>${esc(r.orderNo || ('#' + r.orderId))}</td>
+                <td>${fmtTime(r.createdAt)}</td>
+                <td><div class="ops">
+                    <button class="btn ghost sm" onclick="viewRiskDetail(${r.id})">详情</button>
+                    ${!r.isRead ? `<button class="btn ghost sm" onclick="markRiskRead(${r.id})">标已读</button>` : ''}
+                </div></td>
+            </tr>`).join('') || '<tr><td colspan="7" class="empty">暂无风险评分，点击右上「批量扫描」即可对最近 30 天订单跑一轮</td></tr>';
+    }
+    draw(all);
+
+    document.getElementById('rLevel').onchange = async e => {
+        const v = e.target.value;
+        all = await api('/admin/risk/scores' + (v !== 'ALL' ? '?level=' + v : ''));
+        draw(all);
+    };
+    document.getElementById('rBatchScan').onclick = async () => {
+        if (!hasPerm('risk:scan')) return toast('无 risk:scan 权限', true);
+        const btn = document.getElementById('rBatchScan');
+        btn.disabled = true; btn.textContent = '⏳ 扫描中...';
+        try {
+            const data = await api('/admin/risk/orders/batch-scan?limit=30', 'POST');
+            toast('已扫描 ' + data.scanned + ' 条订单');
+            const v = document.getElementById('rLevel').value;
+            all = await api('/admin/risk/scores' + (v !== 'ALL' ? '?level=' + v : ''));
+            draw(all);
+            renderRisk._refreshOverview();
+            refreshRiskUnread();
+        } catch (e) { toast(e.message, true); }
+        btn.disabled = false; btn.textContent = '🔍 批量扫描最近订单';
+    };
+
+    /**
+     * 「全部标为已读」：把所有未读风险消息一次性标记为已读（不改分数与等级）。
+     * 只写审计，不做幂等；无未读时按钮保持 disabled。批量操作不弹二次确认框。
+     */
+    document.getElementById('rMarkAllRead').onclick = async () => {
+        if (!hasPerm('risk:view')) return toast('无 risk:view 权限', true);
+        const btn = document.getElementById('rMarkAllRead');
+        if (!btn || btn.disabled) return;
+        btn.disabled = true;
+        btn.textContent = '⏳ 处理中...';
+        // 服务端返回的剩余未读数；null 表示请求/刷新异常导致结果未知
+        let remainingUnread = null;
+        try {
+            const data = await api('/admin/risk/scores/read-all', 'PUT', { level: 'ALL' });
+            remainingUnread = (data && typeof data.remainingUnread === 'number') ? data.remainingUnread : 0;
+            const affected = (data && typeof data.affected === 'number') ? data.affected : 0;
+            toast((data && data.message) ? data.message : ('已把 ' + affected + ' 条标记为已读'));
+            const v = document.getElementById('rLevel').value;
+            all = await api('/admin/risk/scores' + (v !== 'ALL' ? '?level=' + v : ''));
+            draw(all);
+            renderRisk._refreshOverview();
+            refreshRiskUnread();
+        } catch (e) {
+            toast(e.message, true);
+        } finally {
+            // 无论成功失败都不能让按钮卡在「处理中」
+            btn.textContent = '✅ 全部标为已读';
+            let left = (typeof remainingUnread === 'number') ? remainingUnread : null;
+            if (left === null) {
+                // 结果未知时用最新概览兜底；概览也拉不到则保守放行（允许重试，避免误锁死）
+                try {
+                    const s = await api('/admin/risk/summary');
+                    left = s.unread || 0;
+                } catch (e2) { left = 1; }
+            }
+            const empty = left <= 0;
+            btn.disabled = empty;
+            btn.title = empty ? '当前没有未读风险消息' : '把当前所有未读风险消息标记为已读（不改分数与等级）';
+        }
+    };
+
+    renderRisk._refreshOverview = async () => {
+        const summary = await api('/admin/risk/summary');
+        document.querySelector('.risk-overview').outerHTML = `
+            <div class="risk-overview">
+                <div class="stat high"><div class="num">${summary.high || 0}</div><div class="lbl">🔴 高风险</div></div>
+                <div class="stat medium"><div class="num">${summary.medium || 0}</div><div class="lbl">🟠 中风险</div></div>
+                <div class="stat low"><div class="num">${summary.low || 0}</div><div class="lbl">🟢 低风险</div></div>
+                <div class="stat unread"><div class="num">${summary.unread || 0}</div><div class="lbl">📩 未读</div></div>
+            </div>`;
+    };
+
+    window.viewRiskDetail = async id => {
+        const list = await api('/admin/risk/scores');
+        const r = list.find(x => x.id === id);
+        if (!r) return toast('记录不存在', true);
+        const signals = (r.signals || []).map(s => `
+            <li>
+                <span class="code">${esc(s.code)}</span>
+                ${esc(s.message)}
+                <span style="color:var(--muted-foreground);font-size:11px;margin-left:6px">权重 ${s.weight}</span>
+            </li>`).join('') || '<li style="background:var(--success-50);border-left-color:var(--success-500);color:var(--success-700)">✓ 未命中任何规则信号（建议依赖 LLM 判断）</li>';
+        const llm = r.llmSummary ? `
+            <div class="llm-box">
+                <b>🤖 AI 综合判断</b>（动作：${esc(r.llmAction || '-')}）<br>
+                ${esc(r.llmSummary)}
+            </div>` : '';
+        const body = `
+            <div class="risk-detail">
+                <div class="row"><span class="lbl">订单编号</span><span>${esc(r.orderNo || ('#' + r.orderId))}</span></div>
+                <div class="row"><span class="lbl">风险评分</span>
+                    <span><b style="font-size:18px;color:${r.level === 'HIGH' ? 'var(--destructive)' : r.level === 'MEDIUM' ? 'var(--warning-strong)' : 'var(--success-500)'}">${r.score}</b> / 100
+                        ${riskBadgeOf(r.level)}
+                    </span>
+                </div>
+                <div class="row"><span class="lbl">建议处置</span><span><b>${esc(r.suggestedAction)}</b></span></div>
+                <div class="row"><span class="lbl">评分来源</span><span>${r.source}</span></div>
+                <div class="row"><span class="lbl">规则引擎分</span><span>${r.ruleScore || 0}</span></div>
+                <div>
+                    <div class="lbl" style="margin-bottom:8px">命中规则</div>
+                    <ul class="signal-list">${signals}</ul>
+                </div>
+                ${llm}
+            </div>`;
+        openModal('风险评分详情', body, r.isRead ? null : async () => {
+            try { await api('/admin/risk/scores/' + id + '/read', 'PUT'); } catch (e) {}
+            closeModal();
+            const rows = document.querySelectorAll('#rRows tr');
+            rows.forEach(tr => {
+                if (tr.innerHTML.includes('onclick="viewRiskDetail(' + id + ')"')) {
+                    tr.style.background = '';
+                    tr.querySelectorAll('span').forEach(s => { if (s.textContent === '●') s.remove(); });
+                }
+            });
+            refreshRiskUnread();
+        }, r.isRead, r.isRead ? '关闭' : '标为已读并关闭', '关闭');
+    };
+
+    window.markRiskRead = async id => {
+        await api('/admin/risk/scores/' + id + '/read', 'PUT');
+        toast('已标记为已读');
+        const v = document.getElementById('rLevel').value;
+        all = await api('/admin/risk/scores' + (v !== 'ALL' ? '?level=' + v : ''));
+        draw(all);
+        renderRisk._refreshOverview();
+        refreshRiskUnread();
+    };
+}
+
+// ==================== 评论管理 ====================
+const SENTIMENT_BADGE = {
+    '正面': ['正面', 'green'],
+    '中性': ['中性', 'gray'],
+    '负面': ['负面', 'orange'],
+    '投诉': ['投诉', 'red']
+};
+const URGENCY_BADGE = {
+    '普通':   ['普通', 'gray'],
+    '需关注': ['需关注', 'orange'],
+    '紧急':   ['紧急', 'red']
+};
+
+/**
+ * 单条回复的展示块。
+ * <p>
+ * 评论下同时存在「用户追评」与「商家回复」（同表存储，靠 replyType 区分），
+ * 这里用不同颜色与标签区分，避免运营把用户追评误当成已回复。
+ */
+function reviewReplyHtml(x) {
+    const merchant = x.replyType === 'MERCHANT';
+    return `<div style="margin-bottom:8px;padding:8px 10px;border-radius:8px;background:${merchant ? 'var(--bg-200)' : 'var(--bg-100)'};border-left:3px solid ${merchant ? 'var(--primary)' : 'var(--border-400)'}">
+        <div style="font-size:12px;color:var(--muted-foreground);margin-bottom:3px">
+            <span class="badge ${merchant ? 'red' : 'gray'}" style="margin-right:6px">${merchant ? '商家回复' : '用户追评'}</span>
+            ${esc(x.userName || '-')} · ${fmtTime(x.createdAt)}
+        </div>
+        <div style="white-space:pre-wrap">${esc(x.content || '')}</div>
+    </div>`;
+}
+
+async function renderReviews() {
+    const [reviews, repliedIds] = await Promise.all([
+        api('/admin/reviews'),
+        // 已回复集合单独拉：评论表本身不带回复信息，这样后台列表也能一次性标出「已回复」
+        api('/admin/reviews/replied-ids').catch(() => [])
+    ]);
+    const repliedSet = new Set(repliedIds || []);
+    window.__revFilter = window.__revFilter || 'all';
+    const filter = window.__revFilter;
+    const filtered = filter === 'all' ? reviews
+        : filter === 'pending' ? reviews.filter(r => !r.aiSentiment)
+        : filter === 'unreplied' ? reviews.filter(r => !repliedSet.has(r.id))
+        : reviews.filter(r => r.aiSentiment === filter);
+
+    const summary = reviews.reduce((acc, r) => {
+        acc.total++;
+        const s = r.aiSentiment || '未分析';
+        acc.bySentiment[s] = (acc.bySentiment[s] || 0) + 1;
+        if (r.aiUrgency === '紧急') acc.urgent++;
+        return acc;
+    }, { total: 0, bySentiment: {}, urgent: 0 });
+
+    const filterBtns = [['all','全部'],['pending','未分析'],['unreplied','待商家回复'],['正面','正面'],['中性','中性'],['负面','负面'],['投诉','投诉']]
+        .map(([k, label]) => `<button class="btn ${filter===k?'primary':'ghost'} sm" onclick="filterReviews('${k}')">${label}</button>`).join('');
+
+    document.getElementById('content').innerHTML = `
+        <div class="toolbar">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">${filterBtns}</div>
+            ${hasRole('ADMIN') ? '<button class="btn primary" onclick="batchAnalyzeReviews()">⚡ 批量 AI 分析</button>' : ''}
+            <div class="spacer"></div>
+            <div style="color:var(--muted-foreground);font-size:12px">
+                共 ${reviews.length} 条 · 紧急 ${summary.urgent} 条 · 未分析 ${summary.bySentiment['未分析']||0} 条
+            </div>
+        </div>
+        ${renderPanel(headWith('评论管理'), tableWrap(`
+            <colgroup>
+                <col style="width:4%"><col style="width:6%"><col style="width:6.5%">
+                <col style="width:6%"><col style="width:6%"><col style="width:6%">
+                <col style="width:17%"><col style="width:15.5%"><col style="width:7%">
+                <col style="width:8%"><col style="width:18%">
+            </colgroup>
+            <thead><tr><th>ID</th><th>商品</th><th>用户</th><th>评分</th><th>情感</th><th>紧急度</th><th>内容</th><th>AI 理由</th><th>商家回复</th><th>时间</th><th>操作</th></tr></thead>
+            <tbody>${filtered.map(r => {
+                const sBadge = r.aiSentiment ? statusBadge(r.aiSentiment, SENTIMENT_BADGE) : '<span class="badge gray">未分析</span>';
+                const uBadge = r.aiUrgency   ? statusBadge(r.aiUrgency,   URGENCY_BADGE)   : '<span class="badge gray">—</span>';
+                const content = r.content || '';
+                const reason = r.aiReason || '';
+                // 时间竖排成「日期 / 时分秒」两行，省下近一半列宽还不撑高行（见下方 .cell-meta）
+                const tsRaw = fmtTime(r.createdAt);
+                const tsSp = tsRaw.indexOf(' ');
+                const tsDate = tsSp > 0 ? tsRaw.substring(0, tsSp) : tsRaw;
+                const tsClock = tsSp > 0 ? tsRaw.substring(tsSp + 1) : '';
+                const replied = repliedSet.has(r.id);
+                const replyBadge = replied
+                    ? '<span class="badge green">已回复</span>'
+                    : '<span class="badge gray">待回复</span>';
+                return `<tr>
+                    <td>${r.id}</td>
+                    <td>${r.productId}</td>
+                    <td>${esc(r.userName || '-')}</td>
+                    <td><span class="badge ${r.rating >= 4 ? 'green' : r.rating >= 3 ? 'orange' : 'red'}">${r.rating} 星</span></td>
+                    <td>${sBadge}</td>
+                    <td>${uBadge}</td>
+                    <td class="wraptext"><div class="clamp-2" title="${esc(content)}">${content ? esc(content) : '—'}</div></td>
+                    <td class="cell-reason"><div class="clamp-2" title="${esc(reason)}">${reason ? esc(reason) : '—'}</div></td>
+                    <td>${replyBadge}</td>
+                    <td><div>${tsDate}</div>${tsClock ? `<span class="cell-meta">${tsClock}</span>` : ''}</td>
+                    <td>
+                        <div class="ops">
+                            <button class="btn ${replied ? 'ghost' : 'primary'} sm" onclick="replyReview(${r.id})" title="以商家身份回复">${replied ? '再回复' : '回复'}</button>
+                            ${hasRole('ADMIN') ? `<button class="btn ghost sm" onclick="analyzeReview(${r.id})" title="AI 分析">🧠</button>` : ''}
+                            ${hasRole('ADMIN') ? `<button class="btn ghost sm" onclick="draftReply(${r.id})" title="AI 起回复">✏️</button>` : ''}
+                            <button class="btn ghost sm" onclick="viewReviewDetail(${r.id})" title="查看详情">👁</button>
+                            <button class="btn danger sm" onclick="delReview(${r.id})">删除</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="11" class="empty">暂无评论</td></tr>'}</tbody>`, 'reviews-table'))}
+    `;
+
+    window.filterReviews = k => { window.__revFilter = k; renderReviews(); };
+    window.analyzeReview = async id => {
+        try {
+            const data = await api('/admin/ai/reviews/' + id + '/analyze', 'POST');
+            toast('分析完成：' + data.sentiment + ' / ' + data.urgency);
+            renderReviews();
+        } catch (e) { toast(e.message, true); }
+    };
+    window.batchAnalyzeReviews = async () => {
+        if (!confirm('对所有「未分析」评论执行 AI 情感分析（最多 30 条）？')) return;
+        const btn = event.target; btn.disabled = true; btn.textContent = '⏳ 分析中…';
+        try {
+            const data = await api('/admin/ai/reviews/batch-analyze', 'POST');
+            btn.disabled = false; btn.textContent = '⚡ 批量 AI 分析';
+            toast('本次已分析 ' + data.count + ' 条');
+            renderReviews();
+        } catch (e) { btn.disabled = false; btn.textContent = '⚡ 批量 AI 分析'; toast(e.message, true); }
+    };
+    window.draftReply = async id => {
+        try {
+            toast('正在生成回复草稿…');
+            const data = await api('/admin/ai/reviews/' + id + '/draft-reply', 'POST');
+            {
+                const drafts = data.drafts || [];
+                // 记住草稿：点「回复」时自动预填第一条，省一次复制粘贴
+                window.__draftsByReview = window.__draftsByReview || {};
+                window.__draftsByReview[id] = drafts;
+                let body;
+                if (drafts.length === 0) {
+                    body = '（无草稿）';
+                } else {
+                    const blocks = drafts.map((d, i) => `
+                        <div class="form-row" style="align-items:flex-start">
+                            <label>草稿 ${i+1}</label>
+                            <div style="flex:1;display:flex;gap:10px;align-items:flex-start">
+                                <textarea readonly style="flex:1;min-height:90px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-100);font-family:inherit">${esc(d)}</textarea>
+                                <button class="btn ghost sm" data-copy-idx="${i}">📋 复制</button>
+                            </div>
+                        </div>`).join('');
+                    body = `<p class="hint" style="margin-bottom:14px">关闭本窗口后点列表里的「回复」，草稿会自动填入回复框，微调即可发布。</p>${blocks}`;
+                }
+                openModal('✏️ AI 客服回复草稿', body, () => closeModal(), true, '关闭', '');
+                document.querySelectorAll('[data-copy-idx]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const idx = parseInt(btn.getAttribute('data-copy-idx'), 10);
+                        const text = drafts[idx] || '';
+                        navigator.clipboard.writeText(text).then(
+                            () => toast('已复制'),
+                            () => toast('复制失败，请手动选取', true)
+                        );
+                    });
+                });
+            }
+        } catch (e) { toast(e.message, true); }
+    };
+    window.viewReviewDetail = async id => {
+        const r = reviews.find(x => x.id === id);
+        if (!r) return;
+        const sBadge = r.aiSentiment ? statusBadge(r.aiSentiment, SENTIMENT_BADGE) : '<span class="badge gray">未分析</span>';
+        const uBadge = r.aiUrgency   ? statusBadge(r.aiUrgency,   URGENCY_BADGE)   : '<span class="badge gray">—</span>';
+        const html = `
+            <div class="form-row"><label>用户</label><div>${esc(r.userName||'-')} · 评论ID ${r.id}</div></div>
+            <div class="form-row"><label>评分</label><div><span class="badge ${r.rating>=4?'green':r.rating>=3?'orange':'red'}">${r.rating} 星</span></div></div>
+            <div class="form-row" style="align-items:flex-start"><label>评论</label><div style="white-space:normal">${esc(r.content||'')}</div></div>
+            <div class="form-row"><label>情感分析</label><div>${sBadge} ${esc(r.aiReason||'')}</div></div>
+            <div class="form-row"><label>紧急度</label><div>${uBadge}</div></div>
+            <div class="form-row"><label>分析时间</label><div class="text-muted">${fmtTime(r.aiAnalyzedAt) || '—'}</div></div>
+            <div class="form-row" style="align-items:flex-start"><label>回复记录</label><div id="revReplies" style="flex:1;white-space:normal">加载中…</div></div>
+        `;
+        openModal('评论详情 #' + r.id, html, () => closeModal(), true, '关闭', '');
+        // 回复单独异步拉：一条评论可能有多条「用户追评」和「商家回复」，按时间顺序展示
+        try {
+            const replies = await api('/admin/reviews/' + id + '/replies');
+            const box = document.getElementById('revReplies');
+            if (!box) return;
+            box.innerHTML = (replies && replies.length)
+                ? replies.map(reviewReplyHtml).join('')
+                : '<span class="text-muted">暂无回复</span>';
+        } catch (e) {
+            const box = document.getElementById('revReplies');
+            if (box) box.innerHTML = `<span class="text-muted">加载失败：${esc(e.message)}</span>`;
+        }
+    };
+
+    /**
+     * 商家回复：把运营写的内容作为「商家回复」发布到该评论下，前台商品详情页的评论里
+     * 会以「商家回复」标签展示（与用户自己的「追评」区分开）。
+     */
+    window.replyReview = async id => {
+        const r = reviews.find(x => x.id === id);
+        const drafts = (window.__draftsByReview || {})[id] || [];
+        const prefill = drafts.length ? esc(drafts[0]) : '';
+        const body = `
+            <div class="form-row"><label>用户</label><div>${esc((r && r.userName) || '-')} · 评论ID ${id}</div></div>
+            <div class="form-row" style="align-items:flex-start"><label>用户评价</label><div style="white-space:normal">${esc((r && r.content) || '')}</div></div>
+            <div class="form-row" style="align-items:flex-start"><label>商家回复</label>
+                <div style="flex:1">
+                    <textarea id="revReplyText" style="width:100%;min-height:110px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-50);font-family:inherit;font-size:13px;color:var(--foreground);line-height:1.5;resize:vertical" placeholder="以商家身份回复该评价，会显示在商品详情页评论区…">${prefill}</textarea>
+                    <div class="hint" style="margin-top:6px">
+                        ${drafts.length ? '已自动填入刚才生成的 AI 草稿，可直接修改。' : '可先用列表里的「✏️ AI 起回复」生成草稿，再回到这里发布。'}
+                    </div>
+                </div>
+            </div>`;
+        openModal('回复评论 #' + id, body, async () => {
+            const el = document.getElementById('revReplyText');
+            const text = ((el && el.value) || '').trim();
+            if (!text) throw new Error('回复内容不能为空');
+            await api('/admin/reviews/' + id + '/reply', 'POST', { content: text });
+            toast('商家回复已发布');
+            renderReviews();
+        }, false, '发布回复', '取消');
+    };
+    window.delReview = async id => {
+        if (!confirm('删除该评论及其追评？')) return;
+        await api('/admin/reviews/' + id, 'DELETE'); toast('已删除'); switchMod('reviews');
+    };
+}
+
+// ==================== 客服管理 ====================
+// 会话列表 + 消息流两栏：左侧选客户，右侧查看「客户提问 / AI 自动回复 / 人工回复」的完整对话，
+// 并可直接以人工客服身份回复。AI 自动回复由后端调用大模型生成，这里只做展示与人工介入。
+const CS_STATUS = { AI:['AI 应答','blue'], HUMAN:['人工跟进','orange'], CLOSED:['已结束','gray'] };
+
+let csConvCache = [];
+let csActiveId = null;
+let csTimer = null;
+
+/** 后台侧边栏的客服未读红点（进入客服管理页会清零）。 */
+async function refreshCsUnread() {
+    const badge = document.getElementById('csUnreadBadge');
+    if (!badge || !hasPerm('cs:manage')) return;
+    try {
+        const s = await api('/admin/cs/stats');
+        const n = (s && s.unread) || 0;
+        badge.textContent = n;
+        badge.style.display = n > 0 ? 'inline-block' : 'none';
+    } catch (e) {
+        // 静默：红点失败不该打扰使用
+    }
+}
+
+function csMsgHtml(m) {
+    const mine = !!(m.fromCustomer || m.sender === 'USER');
+    const isAgent = m.sender === 'AGENT';
+    const cls = mine ? 'user' : (isAgent ? 'agent' : 'ai');
+    const label = mine ? (m.senderName || '客户')
+        : isAgent ? (m.senderName || '人工客服') : 'AI 客服';
+    const avatar = mine ? '客' : (isAgent ? '人' : 'AI');
+    return `<div class="cs-row${mine ? ' me' : ''}">
+        <div class="cs-avatar ${cls}">${avatar}</div>
+        <div class="cs-bubble-wrap">
+            <div class="cs-meta">${esc(label)} · ${fmtTime(m.createdAt)}</div>
+            <div class="cs-bubble">${esc(m.content || '')}</div>
+        </div>
+    </div>`;
+}
+
+function csConvHtml(c) {
+    const active = c.id === csActiveId ? ' active' : '';
+    const unread = (c.unread || 0) > 0 ? `<span class="cs-unread">${c.unread}</span>` : '';
+    return `<div class="cs-conv${active}" onclick="csSelect(${c.id})">
+        <div class="cs-conv-top">
+            <span class="cs-conv-name">${esc(c.userName || ('用户 ' + c.userId))}</span>
+            ${statusBadge(c.status, CS_STATUS)}
+            ${unread}
+            <span class="cs-conv-time">${esc((c.lastMessageAt || '').substring(5, 16))}</span>
+        </div>
+        <div class="cs-conv-last">${esc(c.lastMessage || '（暂无消息）')}</div>
+    </div>`;
+}
+
+/** 只刷新两栏内容，不动输入框（轮询时用户可能正在打字）。 */
+async function csRefresh(keepScroll = true) {
+    let convs, msgs = [];
+    try {
+        convs = await api('/admin/cs/conversations');
+    } catch (e) {
+        return;
+    }
+    csConvCache = convs || [];
+    if (!csConvCache.some(c => c.id === csActiveId)) {
+        csActiveId = csConvCache.length ? csConvCache[0].id : null;
+    }
+    const listBox = document.getElementById('csConvList');
+    if (listBox) {
+        listBox.innerHTML = csConvCache.length
+            ? csConvCache.map(csConvHtml).join('')
+            : '<div class="cs-empty">还没有客户发起会话</div>';
+    }
+    const headBox = document.getElementById('csChatHead');
+    const bodyBox = document.getElementById('csChatBody');
+    if (!bodyBox) return;
+
+    const active = csConvCache.find(c => c.id === csActiveId);
+    if (!active) {
+        if (headBox) headBox.innerHTML = '<span class="hint">从左侧选择一个客户会话</span>';
+        bodyBox.innerHTML = '<div class="cs-empty">暂无会话</div>';
+        refreshCsUnread();
+        return;
+    }
+    try {
+        msgs = await api('/admin/cs/conversations/' + active.id + '/messages');
+    } catch (e) {
+        bodyBox.innerHTML = `<div class="cs-empty">加载失败：${esc(e.message)}</div>`;
+        return;
+    }
+    if (headBox) {
+        headBox.innerHTML = `
+            <span class="cs-conv-name">${esc(active.userName || ('用户 ' + active.userId))}</span>
+            ${statusBadge(active.status, CS_STATUS)}
+            <span class="hint">会话 #${active.id} · 共 ${msgs.length} 条消息</span>
+            <div class="spacer"></div>
+            <button class="btn ghost sm" onclick="csHandBack()" title="交还给 AI 自动应答">🤖 交还 AI</button>`;
+    }
+    const prevScroll = bodyBox.scrollTop;
+    bodyBox.innerHTML = msgs.length
+        ? msgs.map(csMsgHtml).join('')
+        : '<div class="cs-empty">该客户还没有发过消息</div>';
+    if (keepScroll) {
+        // 贴在底部看最新消息；用户手动上翻时不强拉回底部
+        const nearBottom = prevScroll + bodyBox.clientHeight >= bodyBox.scrollHeight - 60;
+        bodyBox.scrollTop = nearBottom ? bodyBox.scrollHeight : prevScroll;
+    } else {
+        bodyBox.scrollTop = bodyBox.scrollHeight;
+    }
+    refreshCsUnread();
+}
+
+async function renderCs() {
+    if (csTimer) { clearInterval(csTimer); csTimer = null; }
+    document.getElementById('content').innerHTML = `
+        <div class="panel" style="margin-bottom:16px">
+            <div class="panel-body">
+                <div class="hint">左侧选择客户，可查看该客户与 <b>AI 客服</b> 的完整对话；在下方输入框回复即以 <b>人工客服</b> 身份发送给客户。</div>
+            </div>
+        </div>
+        <div class="cs-layout">
+            <div class="panel">
+                <div class="panel-head"><h3>客户会话</h3></div>
+                <div class="panel-body"><div class="cs-conv-list" id="csConvList"><div class="cs-empty">加载中…</div></div></div>
+            </div>
+            <div class="cs-chat">
+                <div class="cs-chat-head" id="csChatHead"><span class="hint">加载中…</span></div>
+                <div class="cs-chat-body" id="csChatBody"><div class="cs-empty">加载中…</div></div>
+                <div class="cs-chat-foot">
+                    <textarea id="csReplyInput" rows="2" placeholder="以人工客服身份回复该客户…（Ctrl/⌘ + Enter 发送）"></textarea>
+                    <button class="btn primary" id="csReplyBtn">发送</button>
+                </div>
+            </div>
+        </div>`;
+
+    document.getElementById('csReplyBtn').onclick = csSendReply;
+    document.getElementById('csReplyInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            csSendReply();
+        }
+    });
+
+    await csRefresh(false);
+    // 轮询新消息：客户那边随时可能发消息过来，运营不用手动刷新
+    csTimer = setInterval(() => csRefresh(true), 5000);
+}
+
+window.csSelect = async id => {
+    csActiveId = id;
+    await csRefresh(false);
+};
+
+window.csSendReply = async () => {
+    const input = document.getElementById('csReplyInput');
+    const btn = document.getElementById('csReplyBtn');
+    const text = (input.value || '').trim();
+    if (!text) { toast('请输入回复内容', true); return; }
+    if (!csActiveId) { toast('请先选择一个客户会话', true); return; }
+    btn.disabled = true;
+    btn.textContent = '发送中…';
+    try {
+        await api('/admin/cs/conversations/' + csActiveId + '/reply', 'POST', { content: text });
+        input.value = '';
+        toast('已发送给客户');
+        await csRefresh(false);
+    } catch (e) {
+        toast(e.message, true);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '发送';
+    }
+};
+
+window.csHandBack = async () => {
+    if (!csActiveId) return;
+    if (!confirm('把该会话交还给 AI 自动应答？')) return;
+    try {
+        await api('/admin/cs/conversations/' + csActiveId + '/handback', 'POST');
+        toast('已交还给 AI');
+        await csRefresh(false);
+    } catch (e) {
+        toast(e.message, true);
+    }
+};
+
+// ==================== 分类管理 ====================
+async function renderCategories() {
+    const cats = await api('/admin/categories');
+    const parents = cats.filter(c => c.parentId === 0);
+    const children = cats.filter(c => c.parentId !== 0);
+    document.getElementById('content').innerHTML = renderPanel(
+        headWith('分类管理', `<button class="btn primary sm" id="addCat">+ 新增分类</button>`),
+        tableWrap(`<thead><tr><th>ID</th><th>名称</th><th>类型</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+            ${parents.map(c => `
+                <tr><td>${c.id}</td><td><b>${esc(c.name)}</b></td><td><span class="badge blue">一级</span></td>
+                <td>${c.sortOrder}</td><td>${c.status === 1 ? '<span class="badge green">启用</span>' : '<span class="badge gray">停用</span>'}</td>
+                <td><div class="ops">
+                    <button class="btn ghost sm" onclick="editCat(${c.id}, '${esc(c.name)}', ${c.sortOrder}, ${c.status})">编辑</button>
+                    <button class="btn danger sm" onclick="delCat(${c.id})">删除</button>
+                </div></td></tr>
+                ${children.filter(x => x.parentId === c.id).map(x => `
+                    <tr><td>${x.id}</td><td style="padding-left:32px">↳ ${esc(x.name)}</td><td><span class="badge gray">二级</span></td>
+                    <td>${x.sortOrder}</td><td>${x.status === 1 ? '<span class="badge green">启用</span>' : '<span class="badge gray">停用</span>'}</td>
+                    <td><div class="ops">
+                        <button class="btn ghost sm" onclick="editCat(${x.id}, '${esc(x.name)}', ${x.sortOrder}, ${x.status})">编辑</button>
+                        <button class="btn danger sm" onclick="delCat(${x.id})">删除</button>
+                    </div></td></tr>`).join('')}
+            `).join('')}
+            </tbody>`)
+    );
+    document.getElementById('addCat').onclick = () => openCatModal(null, parents, reload);
+    window.editCat = (id, name, sort, status) => openCatModal(cats.find(c => c.id === id), parents, reload);
+    window.delCat = async id => { if (!confirm('删除该分类？')) return; await api('/admin/categories/' + id, 'DELETE'); toast('已删除'); reload(); };
+    function reload() { switchMod('categories'); }
+}
+
+function openCatModal(c, parents, reload) {
+    const parentOptions = `<option value="0">（一级分类）</option>` + parents.map(p => `<option value="${p.id}" ${c && c.parentId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+    openModal(c ? '编辑分类' : '新增分类', `
+        <div class="form-row"><label>分类名称 *</label><input id="fName" value="${esc(c ? c.name : '')}"></div>
+        <div class="form-row two">
+            <div><label>上级分类</label><select id="fParent">${parentOptions}</select></div>
+            <div><label>排序权重</label><input id="fSort" type="number" value="${c ? c.sortOrder : 0}"></div>
+        </div>
+        ${c ? `<div class="form-row"><label>状态</label><select id="fStatus"><option value="1" ${c.status === 1 ? 'selected' : ''}>启用</option><option value="0" ${c.status === 0 ? 'selected' : ''}>停用</option></select></div>` : ''}
+    `, async () => {
+        const name = document.getElementById('fName').value.trim();
+        if (!name) return toast('请填写分类名称', true);
+        const body = {
+            name,
+            parentId: Number(document.getElementById('fParent').value),
+            sortOrder: Number(document.getElementById('fSort').value),
+        };
+        if (c) body.status = Number(document.getElementById('fStatus').value);
+        if (c) await api('/admin/categories/' + c.id, 'PUT', body);
+        else await api('/admin/categories', 'POST', body);
+        toast(c ? '已更新' : '已新增'); reload();
+    });
+}
+
+// ==================== 促销管理 ====================
+async function renderPromotions() {
+    const promos = await api('/admin/promotions');
+    document.getElementById('content').innerHTML = renderPanel(
+        headWith('促销管理', `<button class="btn primary sm" id="addPromo">+ 新增促销</button>`),
+        tableWrap(`<thead><tr><th>ID</th><th>活动名称</th><th>类型</th><th>门槛</th><th>优惠</th><th>有效期</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>${promos.map(p => `<tr>
+                <td>${p.id}</td><td><b>${esc(p.name)}</b></td>
+                <td><span class="badge blue">${PROMO_TYPE[p.type] || p.type}</span></td>
+                <td>${p.threshold > 0 ? '满 ' + fmtMoney(p.threshold) : '无门槛'}</td>
+                <td>${p.type === 'FULL_REDUCTION' ? '减 ' + fmtMoney(p.discount) : '打 ' + (Number(p.discount) * 10).toFixed(1) + ' 折'}</td>
+                <td>${fmtTime(p.startTime)}<br>至 ${fmtTime(p.endTime)}</td>
+                <td>${p.status === 1 ? '<span class="badge green">启用</span>' : '<span class="badge gray">停用</span>'}</td>
+                <td><div class="ops">
+                    <button class="btn ghost sm" onclick="editPromo(${p.id})">编辑</button>
+                    <button class="btn danger sm" onclick="delPromo(${p.id})">删除</button>
+                </div></td>
+            </tr>`).join('') || '<tr><td colspan="8" class="empty">暂无促销活动</td></tr>'}</tbody>`)
+    );
+    document.getElementById('addPromo').onclick = () => openPromoModal(null, reload);
+    window.editPromo = id => openPromoModal(promos.find(p => p.id === id), reload);
+    window.delPromo = async id => { if (!confirm('删除该促销？')) return; await api('/admin/promotions/' + id, 'DELETE'); toast('已删除'); reload(); };
+    function reload() { switchMod('promotions'); }
+}
+
+function openPromoModal(p, reload) {
+    const isEdit = !!p;
+    openModal(isEdit ? '编辑促销' : '新增促销', `
+        <div class="form-row">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+                <label style="margin:0">活动名称 *</label>
+                <button type="button" class="btn ghost sm" onclick="aiCopyToggle('aiPromoPanel')">✨ AI 帮我写</button>
+            </div>
+            <input id="fName" value="${esc(p ? p.name : '')}" placeholder="如：满100减20">
+        </div>
+        <div class="form-row"><label>促销类型</label><select id="fType">
+            <option value="FULL_REDUCTION" ${!p || p.type === 'FULL_REDUCTION' ? 'selected' : ''}>满减（满 X 减 Y）</option>
+            <option value="DISCOUNT" ${p && p.type === 'DISCOUNT' ? 'selected' : ''}>折扣（打 N 折）</option>
+        </select></div>
+        <div class="form-row two">
+            <div><label>门槛金额（元）</label><input id="fThreshold" type="number" step="0.01" value="${p ? p.threshold : 0}"><div class="hint">0 表示无门槛</div></div>
+            <div><label id="discountLabel">优惠金额/减免（元）</label><input id="fDiscount" type="number" step="0.01" value="${p ? p.discount : ''}"></div>
+        </div>
+        <div class="form-row two">
+            <div><label>开始时间</label><input id="fStart" type="datetime-local" value="${p && p.startTime ? p.startTime.substring(0, 16) : ''}"></div>
+            <div><label>结束时间</label><input id="fEnd" type="datetime-local" value="${p && p.endTime ? p.endTime.substring(0, 16) : ''}"></div>
+        </div>
+        <div class="form-row"><label>活动配图 URL</label><input id="fImageUrl" value="${esc(p && p.imageUrl ? p.imageUrl : '')}" placeholder="https://...  留空则前台使用内置素材占位"><div class="hint">前台卡片顶部配图</div></div>
+        <div class="form-row">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+                <label style="margin:0">活动描述</label>
+                <button type="button" class="btn ghost sm" onclick="aiCopyToggle('aiPromoPanel')">✨ AI 帮我写</button>
+            </div>
+            <input id="fDesc" value="${esc(p && p.description ? p.description : '')}" placeholder="留空则按满减/折扣规则自动生成">
+            <div class="hint">显示在前台卡片上的简短文案</div>
+        </div>
+        <div id="aiPromoPanel" style="display:none;margin-top:6px;padding:14px;border:1px dashed var(--border);border-radius:var(--radius-md);background:var(--bg-50)"></div>
+        <div class="form-row"><label>跳转链接</label><input id="fLink" value="${esc(p && p.link ? p.link : '')}" placeholder="https://...  或纯数字商品ID，留空默认跳促销列表页"><div class="hint">点击「查看详情」的跳转目标</div></div>
+        <div class="form-row"><label>状态</label><select id="fStatus">
+            <option value="1" ${!p || p.status === 1 ? 'selected' : ''}>启用</option>
+            <option value="0" ${p && p.status === 0 ? 'selected' : ''}>停用</option>
+        </select></div>
+    `, async () => {
+        const type = document.getElementById('fType').value;
+        const name = document.getElementById('fName').value.trim();
+        if (!name) return toast('请填写活动名称', true);
+        const discount = Number(document.getElementById('fDiscount').value);
+        if (type === 'DISCOUNT') {
+            if (!(discount > 0 && discount <= 1)) return toast('折扣率需在 (0,1] 之间，如 0.9 表示 9 折', true);
+        } else if (discount < 0) return toast('满减金额不能为负', true);
+        const body = {
+            name, type,
+            threshold: Number(document.getElementById('fThreshold').value) || 0,
+            discount,
+            startTime: document.getElementById('fStart').value ? document.getElementById('fStart').value + ':00' : null,
+            endTime: document.getElementById('fEnd').value ? document.getElementById('fEnd').value + ':00' : null,
+            imageUrl: document.getElementById('fImageUrl').value.trim() || null,
+            description: document.getElementById('fDesc').value.trim() || null,
+            link: document.getElementById('fLink').value.trim() || null,
+            status: Number(document.getElementById('fStatus').value),
+        };
+        if (isEdit) await api('/admin/promotions/' + p.id, 'PUT', body);
+        else await api('/admin/promotions', 'POST', body);
+        toast(isEdit ? '已更新' : '已新增'); reload();
+    });
+
+    document.getElementById('fType').addEventListener('change', function () {
+        document.getElementById('discountLabel').textContent = this.value === 'DISCOUNT' ? '折扣率（0~1，如 0.9）' : '减免金额（元）';
+    });
+
+    // 内联 AI 文案面板（不嵌套弹窗）：默认活动场景，结果可填入活动名称/活动描述
+    aiCopyMount('aiPromoPanel', {
+        sceneDefault: 'PROMOTION',
+        channelDefault: 'DETAIL',
+        build: () => ({
+            name: document.getElementById('fName').value.trim(),
+            promoType: document.getElementById('fType').value,
+            threshold: document.getElementById('fThreshold').value !== '' ? Number(document.getElementById('fThreshold').value) : null,
+            discount: document.getElementById('fDiscount').value !== '' ? Number(document.getElementById('fDiscount').value) : null,
+            existing: document.getElementById('fDesc').value.trim(),
+        }),
+        fill: { title: 'fName', body: 'fDesc' },
+    });
+}
+
+// ==================== 支付管理 ====================
+async function renderPayments() {
+    const pays = await api('/admin/payments');
+    document.getElementById('content').innerHTML = renderPanel(
+        headWith('支付流水'),
+        tableWrap(`<thead><tr><th>ID</th><th>订单号</th><th>用户ID</th><th>金额</th><th>方式</th><th>状态</th><th>支付时间</th><th>操作</th></tr></thead>
+            <tbody>${pays.map(p => `<tr>
+                <td>${p.id}</td><td>${esc(p.orderNo || '-')}</td><td>${p.userId}</td>
+                <td><b>${fmtMoney(p.amount)}</b></td><td>${PAY_METHOD[p.method] || p.method}</td>
+                <td>${statusBadge(p.status, PAY_STATUS)}</td><td>${fmtTime(p.paidAt)}</td>
+                <td>${p.status === 'SUCCESS' ? `<button class="btn danger sm" onclick="refundPay(${p.id})">退款</button>` : ''}</td>
+            </tr>`).join('') || '<tr><td colspan="8" class="empty">暂无支付记录</td></tr>'}</tbody>`)
+    );
+    window.refundPay = async id => { if (!confirm('确认退款该笔支付？')) return; await api('/admin/payments/refund/' + id, 'POST'); toast('已退款'); switchMod('payments'); };
+}
+
+// ==================== 物流管理 ====================
+async function renderShipments() {
+    const ships = await api('/admin/shipments');
+    document.getElementById('content').innerHTML = renderPanel(
+        headWith('物流发货'),
+        tableWrap(`<thead><tr><th>ID</th><th>订单号</th><th>物流公司</th><th>运单号</th><th>状态</th><th>发货时间</th><th>操作</th></tr></thead>
+            <tbody>${ships.map(s => `<tr>
+                <td>${s.id}</td><td>${esc(s.orderNo || '-')}</td><td>${esc(s.company || '-')}</td><td>${esc(s.trackingNo || '-')}</td>
+                <td>${statusBadge(s.status, SHIP_STATUS)}</td><td>${fmtTime(s.shippedAt)}</td>
+                <td><div class="ops">
+                    ${s.status !== 'IN_TRANSIT' ? `<button class="btn ghost sm" onclick="shipStatus(${s.id}, 'IN_TRANSIT')">运输中</button>` : ''}
+                    ${s.status !== 'DELIVERED' ? `<button class="btn primary sm" onclick="shipStatus(${s.id}, 'DELIVERED')">已送达</button>` : ''}
+                </div></td>
+            </tr>`).join('') || '<tr><td colspan="7" class="empty">暂无物流记录</td></tr>'}</tbody>`)
+    );
+    window.shipStatus = async (id, status) => { await api('/admin/shipments/' + id + '/status', 'PUT', { status }); toast('已更新'); switchMod('shipments'); };
+}
+
+// ==================== AI 知识库（RAG 向量检索） ====================
+// 这一页把「助手为什么会这么回答」摊开给人看：知识库里装了什么、检索在哪个域里做、
+// 输入一句话会被召回哪几段规则、相似度各是多少、有没有被意图闸门拦下。
+// 排查顺序（情况的修法完全不同，别猜）：
+//   命中不了              → 这个域里没这条规则：要么知识库缺内容，要么该小节被标成了运营侧
+//   命中了但被阈值砍掉     → 调对应域的 min-score（顾客侧与全量的门槛是两个独立参数）
+//   命中了但答错          → 知识没问题，去改提示词
+//
+// ★ 域（scope）：知识库分「顾客侧」和「运营侧」（小节标题行末尾写 ops 标记，源码里是 HTML 注释形式）。
+//   小发（购物助手）与 AI 客服只用顾客侧；小运（后台助手）用全量。同一句话换个域检索，
+//   结果可能完全不同 —— 上面那个下拉框就是干这个用的。
+//
+// ★ 为什么必须分域（这是 2026-10-09 实测推翻了旧结论的地方）：
+//   分域前 23 个小节混装、三个助手共用一个检索器，实测正例最高分 0.769~0.900、
+//   负例最高分 0.636~0.777 —— 正例最低（怎么转人工 0.769）比负例最高（今天天气怎么样 0.777）还低，
+//   分数带【交错】，任何单一阈值都救不了。而「今天天气怎么样」的高分究竟从哪来？
+//   来自「按天统计的时间范围怎么算」这条后台小节（两边都有「今天」）。
+//   把域分开后它在顾客池只剩 0.689，顾客池的分数带才重新拉开：正例 0.780~0.935，负例 ≤0.724。
+//
+// ★ 阈值（括号里都是实测值，换嵌入模型或大改知识文本必须重测，不同模型分数分布不通用）：
+//   顾客池 min-score-customer=0.75，落在实测空隙 (0.724, 0.780] 的中点
+//   全量池 min-score=0.79，落在实测空隙 (0.777, 0.802] 的中点
+//   短问句会整体拉低向量分：「生鲜能退吗？」只有 5 个字，测得 0.780 贴门槛；
+//   补全成「生鲜可以七天无理由退货吗？」就有 0.935。所以「命中不了」未必是知识缺失，也可能是问得太省略。
+//
+// ★ 词面加权（P3）：向量分之外再加「问句实词与小节标题的字面重合度」（只加权标题，上限 0.05）。
+//   短问句信息量少、向量天然偏低，而字面重合恰恰擅长这种情况 ——
+//   「怎么转人工？」向量只有 0.769（低于门槛），标题「在线客服与转人工」逐字命中，加权后 0.819 通过。
+//   页面上的「向量分」与「综合分」并列显示，就是为了看清一条结果是向量召回的、还是加权顶上来的。
+//
+// ★ 意图闸门（P2）：命中「平台业务数字 / 后台口径概念」的问法直接跳过检索。
+//   判据只有一条 —— 这个域里不可能有答案，召回任何片段都是噪声。
+//   例如「今天有多少订单？」会误命中顾客侧小节，而正确答案是查库得来的数，不该由知识库来答。
+//   它绝不会拦「生鲜能退吗？」这类规则问题：哪怕分低，也是知识库里真有答案的。
+const KNOWLEDGE_SAMPLES = [
+    { q: '满多少免运费？',             tip: '应命中「运费怎么算」（顾客侧实测 0.833）' },
+    { q: '生鲜可以七天无理由退货吗？', tip: '应命中「七天无理由退货」（顾客侧实测 0.935，本例写全了条件所以分很高）' },
+    { q: '券怎么没叠加？',             tip: '应命中「优惠券与活动为什么有时候不叠加」（顾客侧实测 0.930）' },
+    { q: '发货几天算超时？',           tip: '应命中「发货要多久（发货时效承诺）」（顾客侧实测 0.909）' },
+    { q: '怎么转人工？',               tip: '★ 词面加权的价值：向量分只有 0.769（低于门槛），标题逐字命中后综合分 0.819 通过' },
+    { q: '生鲜能退吗？',               tip: '★ 贴近门槛的短问句：顾客侧实测 0.780，刚过 0.75 —— 再省略一点就会被拦' },
+    { q: '今天有多少订单？',           tip: '★ 闸门对照组：平台业务数字，知识库里没有答案，顾客侧会直接跳过检索' },
+    { q: '有没有卖洗衣机？',           tip: '对照组：实测 0.724，低于顾客侧门槛 0.75 —— 商品查询该由工具查库，不该走知识库' }
+];
+
+async function renderKnowledge() {
+    const st = await api('/admin/ai/knowledge/status');
+
+    const readyBadge = st.ready
+        ? '<span class="badge green">已就绪</span>'
+        : (st.enabled ? '<span class="badge orange">未播种</span>' : '<span class="badge gray">已关闭</span>');
+    const paramRow = (k, v, note) =>
+        `<tr><td><b>${k}</b></td><td>${v}</td><td class="cell-meta">${note || ''}</td></tr>`;
+
+    document.getElementById('content').innerHTML = `
+        <div class="stat-grid tight">
+            <div class="stat-card"><div class="label">知识库状态</div><div class="value" style="font-size:18px">${readyBadge}</div></div>
+            <div class="stat-card"><div class="label">知识片段</div><div class="value primary">${st.segmentCount}</div>
+                <div class="cell-meta">顾客侧 ${st.customerSegments} / 运营侧 ${st.opsSegments}</div></div>
+            <div class="stat-card"><div class="label">向量维度</div><div class="value">${st.dimension || '-'}</div>
+                <div class="cell-meta">${esc(st.embeddingModel || '')}</div></div>
+            <div class="stat-card"><div class="label">相似度门槛</div><div class="value" style="font-size:18px">${st.minScoreCustomer} / ${st.minScore}</div>
+                <div class="cell-meta">顾客侧 / 全量</div></div>
+        </div>
+
+        <div class="hint" style="margin-bottom:20px;padding:14px 16px;background:var(--brand-50);border-radius:var(--radius-md);border-left:4px solid var(--brand-500);color:var(--text-700);line-height:1.8">
+            助手回答<b>平台规则类</b>问题（运费、退款、发货时效、优惠叠加…）时，会先用向量检索从知识库里召回最相关的片段，
+            再连同提问一起交给大模型。所以<b>这里的知识库内容 = 助手的对外口径</b>，改这里就是改助手怎么答。
+            向量库建在内存中，因此每次重启后端都会按下面这份知识文本重新播种。<br>
+            知识库按<b>受众域</b>分成两份：<b>顾客侧 ${st.customerSegments} 个片段</b>（小发与 AI 客服可见，只含对外规则）、
+            <b>运营侧 ${st.opsSegments} 个片段</b>（GMV 口径、后台角色权限等内部口径，只有小运与这一页的「全量」能看到）。
+            小节标题行末尾带 <code>&lt;!-- ops --&gt;</code> 即归入运营侧，不写则默认顾客侧。
+        </div>
+
+        <div class="panel" style="margin-bottom:22px">
+            <div class="panel-head">
+                <h3>检索参数</h3>
+                <button class="btn ghost sm" onclick="rebuildKnowledge(this)">🔄 重建知识库</button>
+            </div>
+            <div class="panel-body">
+                ${tableWrap(`<thead><tr><th>参数</th><th>当前值</th><th>说明</th></tr></thead><tbody>
+                    ${paramRow('嵌入模型', esc(st.embeddingModel || '-'), '本地 ONNX 推理，不调用外部 API，无配额与延迟成本')}
+                    ${paramRow('受众域', '顾客侧 ' + st.customerSegments + ' / 运营侧 ' + st.opsSegments, '小节标题行末尾带 &lt;!-- ops --&gt; 即归运营侧，不写默认顾客侧；漏标只是让顾客多看到一条内部口径，反方向才是真事故')}
+                    ${paramRow('top-k', st.topK, '每次最终注入的知识片段数')}
+                    ${paramRow('min-score（全量）', st.minScore, '小运与「全量」域用。这个池子本就是顾客规则 + 后台口径混装，顾客规则类的分数带天然交错，它在这里的职责只是把闲聊挡在外面')}
+                    ${paramRow('min-score（顾客侧）', st.minScoreCustomer, '小发与 AI 客服用的门槛。候选池成分不同，分数分布就不同，必须与全量分开校准')}
+                    ${paramRow('词面加权', st.hybridEnabled ? '开（标题 +' + st.hybridTitleBoost + ' / 正文 +' + st.hybridBodyBoost + '，候选 ' + st.hybridCandidateK + ' 条）' : '关（纯向量）', '把问句实词与小节标题的字面重合度加成到向量分上，用来救「短问句向量分偏低但其实逐字命中标题」的真问题；关掉即完全退化为纯向量检索')}
+                    ${paramRow('意图闸门', (st.guardRules || []).length + ' 条规则', '命中的问法直接跳过检索 —— 这些问法在当前域里不可能有答案，召回任何片段都只是噪声')}
+                    ${paramRow('chunk-size / overlap', st.chunkSize + ' / ' + st.chunkOverlap, '片段切分粒度与相邻重叠长度')}
+                    ${paramRow('知识原文', st.docChars + ' 字', '切分后共 ' + st.segmentCount + ' 个片段')}
+                </tbody>`)}
+                <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="btn secondary sm" onclick="viewKnowledgeSource()">📖 查看知识库原文</button>
+                    <button class="btn secondary sm" onclick="viewGuardRules()">🚧 查看意图闸门规则</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head">
+                <h3>检索测试</h3>
+                <span class="cell-meta">同一句话换个域，结果可能完全不同 —— 这是排查「顾客为什么答不上来」最快的一步</span>
+            </div>
+            <div class="panel-body">
+                <div class="toolbar">
+                    <select id="kbScope" title="在哪个受众域里检索" style="max-width:210px">
+                        <option value="all">全量（小运用的域）</option>
+                        <option value="customer" selected>顾客侧（小发 / AI 客服）</option>
+                        <option value="ops">运营侧（仅内部口径）</option>
+                    </select>
+                    <input id="kbQuery" maxlength="120" placeholder="输入一句用户会问的话，例如：满多少免运费？">
+                    <button class="btn primary" id="kbSearchBtn" onclick="runKnowledgeSearch()">检索</button>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+                    ${KNOWLEDGE_SAMPLES.map((s, i) =>
+                        `<button class="btn ghost sm" title="${esc(s.tip)}" onclick="fillKnowledgeQuery(${i})">${esc(s.q)}</button>`
+                    ).join('')}
+                </div>
+                <div id="kbResult"><div class="empty">输入问题后点「检索」，这里会列出被召回的规则片段、相似度，以及是否被意图闸门拦下。</div></div>
+            </div>
+        </div>
+    `;
+
+    window.fillKnowledgeQuery = i => {
+        const s = KNOWLEDGE_SAMPLES[i];
+        if (!s) return;
+        document.getElementById('kbQuery').value = s.q;
+        runKnowledgeSearch();
+    };
+
+    window.rebuildKnowledge = async btn => {
+        if (!confirm('确认重建知识库？\n\n将清空现有向量，并按当前知识文本重新切分、重新向量化，通常 1~3 秒。')) return;
+        const label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '重建中…';
+        try {
+            const r = await api('/admin/ai/knowledge/rebuild', 'POST');
+            toast(`重建完成：${r.segmentCount} 个片段 / ${r.dimension} 维 / 耗时 ${r.elapsedMs}ms`);
+            switchMod('knowledge');
+        } catch (e) {
+            toast('重建失败：' + (e.message || e), true);
+            btn.disabled = false;
+            btn.textContent = label;
+        }
+    };
+
+    window.viewKnowledgeSource = async () => {
+        try {
+            const text = await api('/admin/ai/knowledge/source');
+            openModal('📖 AI 知识库原文', `
+                <div class="hint" style="margin-bottom:12px">
+                    共 ${(text || '').length} 字。这份文本就是助手回答平台规则类问题时的唯一依据；改动后建议点一次「重建知识库」。
+                </div>
+                <pre style="max-height:56vh;overflow:auto;background:var(--bg-100);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;font-family:var(--font-mono);font-size:12px;line-height:1.75;white-space:pre-wrap;word-break:break-word">${esc(text)}</pre>
+            `, null, true);
+        } catch (e) {
+            toast('读取失败：' + (e.message || e), true);
+        }
+    };
+
+    window.runKnowledgeSearch = async () => {
+        const q = (document.getElementById('kbQuery').value || '').trim();
+        const scopeEl = document.getElementById('kbScope');
+        const scope = scopeEl ? scopeEl.value : 'customer';
+        const box = document.getElementById('kbResult');
+        const btn = document.getElementById('kbSearchBtn');
+        if (!q) { toast('请输入要检索的问题', true); return; }
+
+        btn.disabled = true;
+        box.innerHTML = '<div class="empty">检索中…</div>';
+        try {
+            const r = await api('/admin/ai/knowledge/search?scope=' + encodeURIComponent(scope)
+                + '&q=' + encodeURIComponent(q));
+            box.innerHTML = renderSearchResult(r);
+        } catch (e) {
+            box.innerHTML = `<div class="empty">检索失败：${esc(e.message || String(e))}</div>`;
+        } finally {
+            btn.disabled = false;
+        }
+    };
+
+    window.viewGuardRules = () => {
+        const rows = (st.guardRules || []).map(r =>
+            `<tr><td><b>${esc(r.name)}</b></td>
+                 <td><code style="font-size:12px">${esc(r.pattern)}</code></td>
+                 <td class="cell-meta">${esc(r.why)}</td></tr>`).join('');
+        openModal('🚧 意图闸门规则（顾客侧检索专用）', `
+            <div class="hint" style="margin-bottom:14px;line-height:1.8">
+                这些规则命中的问法会<b>直接跳过知识库检索</b>，而不是靠相似度阈值去拦。<br>
+                判据只有一条：<b>这句话在顾客侧知识库里不可能有答案。</b>
+                答案是查库得来的数字（今天有多少订单、销售额是多少），或是只存在于运营侧的内部概念
+                （后台角色权限、客服接待量、低库存补货），那么召回任何顾客侧片段都只是往上下文里塞噪声 ——
+                不如干净地交给工具查库，或者让助手坦白不知道。<br>
+                它<b>不会</b>拦「生鲜能退吗？」这类规则问题：哪怕向量分只有 0.780、贴着门槛，也是知识库里真有答案的。
+            </div>
+            ${tableWrap(`<thead><tr><th>规则</th><th>正则</th><th>拦的是什么</th></tr></thead><tbody>${rows}</tbody>`)}
+        `, null, true);
+    };
+
+    // 一次检索结果的渲染：先讲清「在哪个域里、门槛多少、词面加权开没开」，再列片段。
+    function renderSearchResult(r) {
+        const scopeMeta = {
+            all:      ['全量', '不过滤；小运（后台助手）用的就是这个域'],
+            customer: ['顾客侧', '只含对外规则；小发与 AI 客服用的就是这个域'],
+            ops:      ['运营侧', '只含后台内部口径；没有助手单独用它，仅供排查']
+        };
+        const meta = scopeMeta[r.scope] || ['未知', ''];
+        const head = `<div class="hint" style="margin-bottom:12px">
+            域 <b>${meta[0]}</b>（${meta[1]}）；本域门槛 min-score=<b>${r.minScore}</b>；
+            词面加权 <b>${r.hybridEnabled ? '开' : '关'}</b>。
+        </div>`;
+
+        if (r.blocked) {
+            return head + `<div style="border:1px solid var(--border);border-left:4px solid var(--warning);border-radius:var(--radius-md);padding:16px;background:var(--card);line-height:1.9">
+                🚧 <b>被意图闸门拦下，本次没有检索知识库。</b><br>
+                ${esc(r.blockReason)}<br>
+                <span class="cell-meta">这类问题应交由工具查库或直接回答；硬塞平台规则进上下文只会污染模型判断。
+                把上面的域切到别的域再试，可以确认答案是否存在于另一侧的池子里。</span>
+            </div>`;
+        }
+
+        const items = r.items || [];
+        if (!items.length) {
+            return head + `<div class="empty" style="text-align:left;line-height:1.9">
+                这个域里没有命中任何片段 —— 最高相似度低于本域门槛 ${r.minScore}。<br>
+                可能是：① 知识库里确实没有这条规则；② 有但被切分或表述影响、没被召回；
+                ③ 该小节被标成了另一侧（切换上面的域试试）。<br>
+                <span class="cell-meta">另外，「生鲜能退吗？」这类过短的问句向量分天然偏低，写全条件后分数会明显上升。</span>
+            </div>`;
+        }
+
+        const minScore = Number(r.minScore) || 0;
+        const cards = items.map((it, i) => {
+            const score = Number(it.score) || 0;
+            const vec = (it.vectorScore === null || it.vectorScore === undefined) ? null : Number(it.vectorScore);
+            const tone = score >= 0.85 ? 'green' : (score >= minScore ? 'blue' : 'gray');
+            const boost = (vec === null || score - vec <= 0.0005) ? ''
+                : `<span class="badge orange" title="词面加权加上去的分">词面 +${(score - vec).toFixed(3)}</span>`;
+            const vecBadge = vec === null ? '' : `<span class="badge gray">向量 ${vec.toFixed(3)}</span>`;
+            return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:12px;background:var(--card)">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;flex-wrap:wrap">
+                    <span class="badge primary">#${i + 1}</span>
+                    <b style="font-size:13px">${esc(it.section || '未标注小节')}</b>
+                    <span class="badge ${tone}">综合分 ${score.toFixed(3)}</span>
+                    ${vecBadge}${boost}
+                </div>
+                <div style="font-size:13px;line-height:1.8;color:var(--text-700);white-space:pre-wrap;word-break:break-word">${esc(it.text)}</div>
+            </div>`;
+        }).join('');
+        return head + `<div class="hint" style="margin-bottom:12px">共召回 <b>${items.length}</b> 个片段（按综合分降序，已通过 min-score=${minScore} 过滤；「综合分」= 向量分 + 词面加权）</div>${cards}`;
+    }
+}
+
+// ==================== 模态框 ====================
+let modalOkHandler = null;
+function openModal(title, bodyHtml, onOk, hideFooter = false, okText = '确定', cancelText = '取消') {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').innerHTML = bodyHtml;
+    document.getElementById('modalMask').classList.add('show');
+    document.getElementById('modalFoot').style.display = hideFooter ? 'none' : 'flex';
+    document.getElementById('modalOk').textContent = okText;
+    document.getElementById('modalCancel').textContent = cancelText;
+    modalOkHandler = onOk;
+}
+function closeModal() { document.getElementById('modalMask').classList.remove('show'); modalOkHandler = null; }
+document.getElementById('modalClose').onclick = closeModal;
+document.getElementById('modalCancel').onclick = closeModal;
+document.getElementById('modalMask').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.getElementById('modalOk').onclick = async () => {
+    if (!modalOkHandler) return closeModal();
+    try { await modalOkHandler(); closeModal(); }
+    catch (err) { toast(err.message, true); }
+};
+
+// ==================== AI 营销文案（内联面板） ====================
+// 设计约束：整个页面只有一个 modal 容器，绝不能嵌套弹窗。因此 AI 面板作为「内联展开区」
+// 渲染在当前 modalBody 内部（见 openProductModal / openPromoModal 里的 #aiProdPanel/#aiPromoPanel）。
+// 每个面板独立：场景/渠道下拉 + 补充说明 + 生成/重新生成 + 结果分区展示 + 每字段独立「填入」。
+// 注意：本 script 块内不得出现字面注释符 &lt;!-- 或 --&gt;（HTML 解析器会吞掉后续脚本）。
+window._aiPanels = {};
+window._aiResults = {};
+let _aiMarketingDict = null;
+
+async function aiCopyLoadDict() {
+    if (_aiMarketingDict) return _aiMarketingDict;
+    try {
+        const d = await api('/admin/ai/marketing/scenes');
+        if (d && d.scenes && d.channels) {
+            _aiMarketingDict = d;
+            return d;
+        }
+    } catch (e) {
+        // 拉取字典失败则退回内置默认，保证面板仍可用
+    }
+    _aiMarketingDict = {
+        scenes: [{ code: 'PRODUCT', label: '商品文案' }, { code: 'PROMOTION', label: '活动文案' }],
+        channels: [
+            { code: 'DETAIL', label: '商品详情页' },
+            { code: 'HOME_CARD', label: '首页卡片' },
+            { code: 'PUSH', label: '短信推送' },
+            { code: 'SOCIAL', label: '社群/朋友圈' }
+        ]
+    };
+    return _aiMarketingDict;
+}
+
+function aiCopyOptions(list, selected) {
+    return (list || []).map(o =>
+        `<option value="${esc(o.code)}" ${o.code === selected ? 'selected' : ''}>${esc(o.label)}</option>`
+    ).join('');
+}
+
+async function aiCopyMount(panelId, cfg) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    window._aiPanels[panelId] = cfg || {};
+    window._aiResults[panelId] = null; // 每次打开弹窗都从干净状态开始，避免残留上次结果
+    const dict = await aiCopyLoadDict();
+    const sceneDefault = (cfg && cfg.sceneDefault) || 'PRODUCT';
+    const channelDefault = (cfg && cfg.channelDefault) || 'DETAIL';
+    panel.innerHTML = `
+        <div class="form-row two">
+            <div><label>文案场景</label><select id="${panelId}Scene">${aiCopyOptions(dict.scenes, sceneDefault)}</select></div>
+            <div><label>投放渠道</label><select id="${panelId}Channel">${aiCopyOptions(dict.channels, channelDefault)}</select></div>
+        </div>
+        <div class="form-row"><label>补充说明（关键词 / 规格 / 产地 / 限时 / 目标人群；也可直接粘贴「想改写的现有文案」）</label>
+            <textarea id="${panelId}Extra" placeholder="如：现摘脆甜 陕西洛川产 5斤装 限时3天；也可直接粘贴一段想改写的文案"></textarea></div>
+        <div class="form-row">
+            <button type="button" class="btn primary sm" id="${panelId}Gen" onclick="aiCopyGenerate('${panelId}')">✨ 生成文案</button>
+            <span class="hint" id="${panelId}Status" style="margin-left:10px"></span>
+        </div>
+        <div id="${panelId}Result"></div>`;
+}
+
+function aiCopyToggle(panelId) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const hidden = !panel.style.display || panel.style.display === 'none';
+    panel.style.display = hidden ? 'block' : 'none';
+    if (hidden && panel.scrollIntoView) panel.scrollIntoView({ block: 'nearest' });
+}
+
+async function aiCopyGenerate(panelId) {
+    const cfg = window._aiPanels[panelId];
+    if (!cfg) return;
+    const btn = document.getElementById(panelId + 'Gen');
+    const statusEl = document.getElementById(panelId + 'Status');
+    const sceneSel = document.getElementById(panelId + 'Scene');
+    const channelSel = document.getElementById(panelId + 'Channel');
+    const extraEl = document.getElementById(panelId + 'Extra');
+    const req = Object.assign({}, cfg.build ? cfg.build() : {});
+    req.scene = sceneSel ? sceneSel.value : (cfg.sceneDefault || 'PRODUCT');
+    req.channel = channelSel ? channelSel.value : (cfg.channelDefault || 'DETAIL');
+    req.extra = extraEl ? extraEl.value.trim() : (req.extra || '');
+    if (!req.name && !req.extra && !req.existing) { toast('请先填写名称、补充说明，或需要改写的内容', true); return; }
+
+    btn.disabled = true;
+    btn.textContent = '生成中…';
+    if (statusEl) statusEl.textContent = 'AI 正在创作，请稍候（约需数秒）…';
+    try {
+        const data = await api('/admin/ai/marketing/copy', 'POST', req);
+        window._aiResults[panelId] = data;
+        aiCopyRender(panelId, data);
+        if (statusEl) statusEl.textContent = '完成，用时 ' + (data.elapsedMs || 0) + ' ms';
+    } catch (e) {
+        if (statusEl) statusEl.textContent = '';
+        toast(e.message || '生成失败，请稍后重试', true);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = window._aiResults[panelId] ? '🔄 重新生成' : '✨ 生成文案';
+    }
+}
+
+function aiCopyRender(panelId, d) {
+    const box = document.getElementById(panelId + 'Result');
+    if (!box) return;
+    const fill = (window._aiPanels[panelId] && window._aiPanels[panelId].fill) || {};
+    const empty = '<span style="color:var(--muted-foreground)">（空）</span>';
+    const row = (label, field, value) => {
+        const val = (value === null || value === undefined || value === '') ? empty : esc(value);
+        const btn = fill[field]
+            ? `<button type="button" class="btn ghost sm" onclick="aiCopyFill('${panelId}','${field}')">填入</button>` : '';
+        return `<div class="form-row" style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+                <label style="margin:0">${label}</label>${btn}
+            </div>
+            <div style="font-size:13px;line-height:1.6;word-break:break-word;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm)">${val}</div>
+        </div>`;
+    };
+    const points = (d.sellingPoints && d.sellingPoints.length)
+        ? d.sellingPoints.map(s => `<span class="badge primary" style="margin:0 6px 6px 0">${esc(s)}</span>`).join('')
+        : empty;
+    const spBtn = fill.sellingPoints
+        ? `<button type="button" class="btn ghost sm" onclick="aiCopyFill('${panelId}','sellingPoints')">填入</button>` : '';
+    const tips = (d.tips && d.tips.length)
+        ? `<div class="hint" style="padding:8px 10px;background:var(--brand-50);border-radius:var(--radius-sm);color:var(--brand-800)">${d.tips.map(esc).join('；')}</div>`
+        : '';
+    box.innerHTML = `
+        ${row('标题', 'title', d.title)}
+        ${row('副标题', 'subtitle', d.subtitle)}
+        <div class="form-row" style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+                <label style="margin:0">卖点</label>${spBtn}
+            </div>
+            <div style="padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm)">${points}</div>
+        </div>
+        ${row('正文', 'body', d.body)}
+        ${row('行动号召', 'cta', d.cta)}
+        ${tips}`;
+}
+
+function aiCopyFill(panelId, field) {
+    const cfg = window._aiPanels[panelId];
+    const data = window._aiResults[panelId];
+    if (!cfg || !data) return;
+    const targetId = cfg.fill ? cfg.fill[field] : null;
+    if (!targetId) { toast('该字段没有可填入的位置', true); return; }
+    const el = document.getElementById(targetId);
+    if (!el) { toast('未找到目标输入框', true); return; }
+    const val = field === 'sellingPoints'
+        ? (data.sellingPoints || []).join(' ')
+        : (data[field] == null ? '' : String(data[field]));
+    if (!val) { toast('该字段为空，无需填入', true); return; }
+    const cur = (el.value || '').trim();
+    if (cur && cur !== val && !confirm('目标输入框已有内容，确认覆盖？')) return;
+    el.value = val;
+    toast('已填入');
+}
+
+// ==================== 低库存自动预警 ====================
+async function checkLowStockAlert() {
+    try {
+        const low = await api('/admin/products/low-stock');
+        if (low && low.length > 0) showLowStockAlert(low);
+    } catch (e) {
+        // 静默忽略，避免打扰
+    }
+}
+
+function showLowStockAlert(items) {
+    const rows = items.map(p => {
+        const gap = LOW_STOCK_THRESHOLD - p.stock;
+        return `<tr>
+            <td><b>${esc(p.name)}</b><span class="cell-meta">ID ${p.id}</span></td>
+            <td><span class="badge red">${p.stock} 件</span></td>
+            <td><span class="badge orange">缺 ${gap} 件</span></td>
+        </tr>`;
+    }).join('');
+    openModal('⚠️ 库存预警', `
+        <div class="hint" style="margin-bottom:16px;padding:14px;background:var(--brand-50);border-radius:var(--radius-md);border-left:4px solid var(--warning);color:var(--brand-800)">
+            有 <b style="color:var(--destructive)">${items.length}</b> 件商品库存低于安全阈值（<b>${LOW_STOCK_THRESHOLD}</b> 件），请及时补货。
+        </div>
+        <div style="overflow:auto;max-height:340px">
+            ${tableWrap(`<thead><tr><th>商品名称</th><th>当前库存</th><th>低于阈值差额</th></tr></thead><tbody>${rows}</tbody>`)}
+        </div>
+    `, () => { switchMod('stock'); }, false, '前往补货', '稍后处理');
+}
+
+// ==================== AI 运营助手 ====================
+const AI_SUGGESTIONS = [
+    '最近 5 单待发货有哪些？',
+    '这周 GMV 多少？',
+    '库存预警有哪些商品？',
+    '搜索含"苹果"的商品',
+    '现在有什么促销活动？',
+    '总共有多少注册用户？'
+];
+const aiMessages = document.getElementById('aiMessages');
+const aiInput = document.getElementById('aiInput');
+let aiBusy = false;
+
+function appendAiMsg(text, kind) {
+    const div = document.createElement('div');
+    div.className = 'ai-msg ' + kind;
+    div.textContent = text;
+    aiMessages.appendChild(div);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+    return div;
+}
+
+function appendAiTip(text) {
+    const div = document.createElement('div');
+    div.className = 'ai-msg-tips';
+    div.textContent = text;
+    aiMessages.appendChild(div);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+}
+
+function appendAiSuggestions() {
+    const wrap = document.createElement('div');
+    wrap.className = 'ai-msg-suggest';
+    AI_SUGGESTIONS.forEach(s => {
+        const b = document.createElement('button');
+        b.textContent = s;
+        b.onclick = () => {
+            if (aiBusy) return;
+            aiInput.value = s;
+            aiInput.focus();
+            sendAiMsg();
+        };
+        wrap.appendChild(b);
+    });
+    aiMessages.appendChild(wrap);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+}
+
+function resetAiDialog() {
+    aiMessages.innerHTML = '';
+    appendAiTip('你好！我是 AI 运营助手「小运」，可以帮你查询订单/商品/用户/库存/促销等数据。试试下方快速提问：');
+    appendAiSuggestions();
+}
+
+/**
+ * 渲染小运本轮返回的「待确认提案卡片」与「追问选项」。
+ *
+ * <p><b>卡片上没有一个数字是前端算的</b>：金额、状态变化、库存、订单号全部来自
+ * {@code proposal.fields[]} / {@code actionLabel} / {@code targetLabel} / {@code risk} /
+ * {@code precheck}，{@code XiaoyunAction} 只负责排版。这是为了解决「同一件事在后台列表、
+ * 小运答复、卡片三处显示不一致」的老问题。
+ *
+ * <p>提案为空时**什么都不渲染** —— 后端只会把 {@code prepare_*} 工具的真实返回编译成提案，
+ * 所以「模型嘴上说已准备好卡片、实际没调工具」的结果就是 0 张卡片，而不是一张假卡片。
+ *
+ * <p>执行成功后顺手刷新侧边栏红点（退款/客服待办数会变），失败不动。
+ */
+function renderAiProposals(data) {
+    if (!data || typeof XiaoyunAction === 'undefined') return;
+
+    // needsClarification 目前后端返回 Boolean（弱信号：只用于提示，不拦卡片）。
+    // 若将来后端改成 {options:[...]}，这里无需改动即可渲染可点选项。
+    const nc = data.needsClarification;
+    const clarifyOptions = (nc && typeof nc === 'object' && Array.isArray(nc.options)) ? nc.options : null;
+    if (clarifyOptions) {
+        XiaoyunAction.renderOptions(aiMessages, clarifyOptions, text => {
+            aiInput.value = text;
+            aiInput.focus();
+        });
+    }
+
+    if (!Array.isArray(data.proposals) || !data.proposals.length) return;
+
+    XiaoyunAction.renderAll(aiMessages, data.proposals, {
+        onSettled: (proposal, env) => {
+            if (!env || env.code !== 0) return;
+            try {
+                if (typeof refreshRefundUnread === 'function') refreshRefundUnread();
+                if (typeof refreshCsUnread === 'function') refreshCsUnread();
+                if (typeof refreshRiskUnread === 'function') refreshRiskUnread();
+                // 「风险消息一键已读」执行完成后，若风险页正开着，把列表重画一遍：
+                // 否则旧行上的「●」未读点和「标已读」按钮会留在那里，看起来像没生效。
+                if (currentMod === 'risk' && typeof renderRisk === 'function') renderRisk();
+            } catch (e) {
+                // 红点刷新失败绝不能影响卡片状态展示
+            }
+        }
+    });
+}
+
+async function sendAiMsg() {
+    if (aiBusy) return;
+    const text = aiInput.value.trim();
+    if (!text) return;
+    appendAiMsg(text, 'user');
+    aiInput.value = '';
+    aiInput.style.height = '42px';
+
+    aiBusy = true;
+    document.getElementById('aiSend').disabled = true;
+    const placeholder = appendAiMsg('正在查询数据并整理答复…', 'bot thinking');
+
+    try {
+        const data = await api('/admin/ai/assistant', 'POST', { message: text });
+        placeholder.classList.remove('thinking');
+        placeholder.textContent = ((data && data.answer) || '').trim() || '（无答复）';
+        // 卡片紧跟在答复气泡下面（同一条消息流），不另开弹窗
+        renderAiProposals(data);
+    } catch (e) {
+        placeholder.classList.remove('thinking');
+        placeholder.classList.add('error');
+        placeholder.textContent = '网络异常：' + (e.message || e);
+    } finally {
+        aiBusy = false;
+        document.getElementById('aiSend').disabled = false;
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+        aiInput.focus();
+    }
+}
+
+async function loadAiHistory() {
+    try {
+        const history = await api('/admin/ai/history');
+        if (history && history.length) {
+            // 有历史时用历史替换默认欢迎语，恢复上次会话
+            aiMessages.innerHTML = '';
+            history.forEach(m => appendAiMsg(m.content || '', m.role === 'user' ? 'user' : 'bot'));
+        }
+    } catch (e) {
+        // 拉取失败保持默认欢迎语，不打断使用
+    }
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+}
+
+/**
+ * 常驻「待确认操作」区块：进入小运时拉取「当前登录人 · 未过期 · 待确认」的提案。
+ *
+ * <p>为什么需要它：确认卡片原先只存在于「当轮对话响应」里，刷新页面后
+ * {@code /admin/ai/history} 只回放文字、不重绘卡片，而提案只有 5 分钟 TTL ——
+ * 用户会看到小运说「请点击卡片确认」，界面上却没有卡片可点。
+ *
+ * <p>数据结构与对话响应里的 {@code proposals} 完全一致，因此直接复用
+ * {@code XiaoyunAction.renderAll}，卡片渲染逻辑零改动。
+ *
+ * <p>执行成功（{@code env.code === 0}）后把该卡从区块移除并更新计数；
+ * 数量归零时隐藏区块；接口为空或失败时**不渲染任何占位**，不影响正常对话。
+ */
+async function loadAiPending() {
+    // 每次进入小运都重建，避免重复打开时叠出多个区块
+    const stale = document.getElementById('aiPendingBlock');
+    if (stale && stale.parentNode) stale.parentNode.removeChild(stale);
+    if (typeof XiaoyunAction === 'undefined') return;
+
+    let list;
+    try {
+        list = await api('/admin/ai/actions/pending');
+    } catch (e) {
+        return; // 拉取失败不打断对话：区块不出现即可
+    }
+    if (!Array.isArray(list) || !list.length) return; // 为空不渲染任何占位
+
+    const wrap = document.createElement('div');
+    wrap.className = 'xy-pending';
+    wrap.id = 'aiPendingBlock';
+
+    const head = document.createElement('div');
+    head.className = 'xy-pending-head';
+    const title = document.createElement('span');
+    title.textContent = '待确认操作';
+    const count = document.createElement('span');
+    count.className = 'xy-pending-count';
+    count.textContent = String(list.length);
+    head.appendChild(title);
+    head.appendChild(count);
+    wrap.appendChild(head);
+
+    const listEl = document.createElement('div');
+    listEl.className = 'xy-pending-list';
+    wrap.appendChild(listEl);
+
+    // 插到消息流最顶部（历史对话与欢迎语之上），保持「待办优先」的视觉顺序
+    aiMessages.insertBefore(wrap, aiMessages.firstChild);
+
+    const cards = XiaoyunAction.renderAll(listEl, list, {
+        onSettled: (proposal, env) => {
+            if (!env || env.code !== 0) return; // 失败保留卡片，让运营看到原因
+            try {
+                const card = listEl.querySelector(
+                    '.xy-card[data-proposal-id="' + (proposal && proposal.proposalId ? proposal.proposalId : '') + '"]');
+                if (card && card.parentNode) card.parentNode.removeChild(card);
+                const left = listEl.querySelectorAll('.xy-card').length;
+                count.textContent = String(left);
+                if (left === 0) wrap.style.display = 'none';
+            } catch (e) {
+                // DOM 更新失败绝不能影响卡片自身的状态展示
+            }
+            try {
+                if (typeof refreshRefundUnread === 'function') refreshRefundUnread();
+                if (typeof refreshCsUnread === 'function') refreshCsUnread();
+                if (typeof refreshRiskUnread === 'function') refreshRiskUnread();
+            } catch (e) {
+                // 红点刷新失败忽略
+            }
+        }
+    });
+
+    // 计数以「真正渲染出来的卡片」为准：结构不可用的提案会被 renderAll 跳过
+    count.textContent = String(cards.length);
+    if (!cards.length) {
+        if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+    }
+}
+
+function initAiAssistant() {
+    document.getElementById('aiFab').onclick = async () => {
+        document.getElementById('aiMask').classList.add('show');
+        resetAiDialog();
+        // 先回放历史（loadAiHistory 可能清空消息列表），再插入待确认区块，
+        // 否则区块会被随后的 history 覆盖掉。
+        await loadAiHistory();
+        loadAiPending();
+        aiInput.focus();
+    };
+    document.getElementById('aiClose').onclick = () => document.getElementById('aiMask').classList.remove('show');
+    document.getElementById('aiClear').onclick = async () => {
+        if (!confirm('确定清空本次会话及 AI 的长期记忆吗？')) return;
+        try {
+            await api('/admin/ai/memory', 'DELETE');
+            toast('已清空 AI 会话与长期记忆');
+        } catch (e) {
+            toast('清空失败：' + (e.message || e), true);
+        } finally {
+            resetAiDialog(); // 无论后端结果如何，都清空本地 DOM 作为兜底
+        }
+    };
+    document.getElementById('aiSend').onclick = sendAiMsg;
+    aiInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendAiMsg();
+        }
+    });
+    aiInput.addEventListener('input', () => {
+        aiInput.style.height = 'auto';
+        aiInput.style.height = Math.min(aiInput.scrollHeight, 130) + 'px';
+    });
+}
+
+// ==================== 启动 ====================
+function initChartHover() {
+    const box = document.getElementById('content');
+    if (!box) return;
+    box.addEventListener('mouseover', e => {
+        const p = e.target.closest('.chart-donut .arc path');
+        if (p) {
+            p.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            p.style.transformOrigin = '0 0';
+            p.style.transform = 'scale(1.12)';
+        }
+    });
+    box.addEventListener('mouseout', e => {
+        const el = e.target.closest('.chart-donut .arc path');
+        if (el && (!e.relatedTarget || !el.contains(e.relatedTarget))) {
+            el.style.transform = '';
+        }
+    });
+}
+
+async function init() {
+    if (!getToken()) { window.location.href = '/login.html'; return; }
+    const me = await loadMe();
+    if (!me) { window.location.href = '/login.html'; return; }
+    document.getElementById('logoutBtn').onclick = logout;
+    applyNavVisibility();
+    const navMod = (currentMod && document.querySelector('#nav a[data-mod="' + currentMod + '"]:not([style*="display: none"])')) ? currentMod : 'dashboard';
+    switchMod(navMod);
+    checkLowStockAlert();
+    initAiAssistant();
+    refreshRiskUnread();
+    refreshCsUnread();
+    refreshRefundUnread();
+}
+initChartHover();
+init();
+</script>
+</body>
+</html>

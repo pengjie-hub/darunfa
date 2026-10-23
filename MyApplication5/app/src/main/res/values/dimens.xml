@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  大润发 App 通用设计令牌（间距 / 尺寸 / 圆角 / 字号 / 阴影）
+  依据 DESIGN-SYSTEM.md 第 2.6~2.9 节与第 5.2 节建立。
+  基准：4dp 网格；2/6/10/14 为高频半档；0/1 为结构性常量。
+  说明：小尺寸（≤64dp）复用同值 space_* 令牌，无需第二命名。
+-->
+<resources>
+    <!-- ===== 间距阶梯 space_*（padding / margin / gap / lineSpacing） ===== -->
+    <dimen name="space_0">0dp</dimen>
+    <dimen name="space_1">1dp</dimen>
+    <dimen name="space_2">2dp</dimen>
+    <dimen name="space_4">4dp</dimen>
+    <dimen name="space_6">6dp</dimen>
+    <dimen name="space_8">8dp</dimen>
+    <dimen name="space_10">10dp</dimen>
+    <dimen name="space_12">12dp</dimen>
+    <dimen name="space_14">14dp</dimen>
+    <dimen name="space_16">16dp</dimen>
+    <dimen name="space_20">20dp</dimen>
+    <dimen name="space_24">24dp</dimen>
+    <dimen name="space_28">28dp</dimen>
+    <dimen name="space_32">32dp</dimen>
+    <dimen name="space_40">40dp</dimen>
+    <dimen name="space_48">48dp</dimen>
+    <dimen name="space_64">64dp</dimen>
+
+    <!-- ===== 组件尺寸 size_*（width / height / minWidth / minHeight） ===== -->
+    <dimen name="size_btn_sm">36dp</dimen>
+    <dimen name="size_btn_lg">44dp</dimen>
+    <dimen name="size_touch">48dp</dimen>
+    <dimen name="size_thumb">80dp</dimen>
+    <dimen name="size_56">56dp</dimen>
+    <dimen name="size_60">60dp</dimen>
+    <dimen name="size_68">68dp</dimen>
+    <dimen name="size_72">72dp</dimen>
+    <dimen name="size_84">84dp</dimen>
+    <dimen name="size_90">90dp</dimen>
+    <dimen name="size_96">96dp</dimen>
+    <dimen name="size_100">100dp</dimen>
+    <dimen name="size_108">108dp</dimen>
+    <dimen name="size_118">118dp</dimen>
+    <dimen name="size_120">120dp</dimen>
+    <dimen name="size_140">140dp</dimen>
+    <dimen name="size_160">160dp</dimen>
+    <dimen name="size_200">200dp</dimen>
+    <dimen name="size_248">248dp</dimen>
+    <dimen name="size_260">260dp</dimen>
+    <dimen name="size_630">630dp</dimen>
+
+    <!-- ===== 圆角 radius_*（收敛到 5 档 + 0） ===== -->
+    <dimen name="radius_0">0dp</dimen>
+    <dimen name="radius_sm">8dp</dimen>
+    <dimen name="radius_md">12dp</dimen>
+    <dimen name="radius_lg">16dp</dimen>
+    <dimen name="radius_xl">24dp</dimen>
+    <dimen name="radius_full">9999dp</dimen>
+
+    <!-- ===== 字号 text_*（收敛到 7 档） ===== -->
+    <dimen name="text_caption">11sp</dimen>
+    <dimen name="text_label">12sp</dimen>
+    <dimen name="text_body">14sp</dimen>
+    <dimen name="text_subtitle">16sp</dimen>
+    <dimen name="text_title">20sp</dimen>
+    <dimen name="text_heading">24sp</dimen>
+    <dimen name="text_display">34sp</dimen>
+
+    <!-- ===== 阴影 elevation_*（对齐后台 shadow-sm/md/lg） ===== -->
+    <dimen name="elevation_flat">0dp</dimen>
+    <dimen name="elevation_sm">2dp</dimen>
+    <dimen name="elevation_md">4dp</dimen>
+    <dimen name="elevation_lg">8dp</dimen>
+</resources>

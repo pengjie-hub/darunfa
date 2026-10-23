@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  订单卡片（「我的订单」列表单项）—— 一张卡片 = 一个订单。
+  信息层级：状态 chip / 商品区 为主信息；订单号、运单号、退款提示、时间为次要信息。
+  间距体系：卡片内边距 14dp，卡片间距由 layout_marginBottom 控制（10dp），元素纵向节奏 8/12dp。
+
+  ⚠️ 商品区是容器 ll_goods，不是固定的商品信息行：
+  同一订单号下的多件商品由 OrderAdapter 在这里按数量 inflate item_order_goods_row.xml
+  （相邻两件之间插 item_order_goods_divider.xml），因此**卡片数与订单数一致、不再与商品行数一致**。
+
+  注意：以下 6 个 id 由 OrderAdapter.VH 绑定，禁止改名或删除；
+  商品行的 5 个 id 在 item_order_goods_row.xml 里，由 OrderAdapter.bindGoodsRow() 绑定。
+-->
+<androidx.cardview.widget.CardView
+    android:foreground="?attr/selectableItemBackground" xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_10"
+    app:cardBackgroundColor="@color/rt_surface"
+    app:cardCornerRadius="@dimen/radius_md"
+    app:cardElevation="@dimen/elevation_md">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_14">
+
+        <!-- 顶部：订单号（次要·左）+ 状态 chip（主要·右） -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_order_id"
+                android:layout_width="@dimen/space_0"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/space_8"
+                android:minWidth="@dimen/space_0"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_label"
+                android:text="订单号: #1001" />
+
+            <!-- 状态标签：默认主色系 chip，运行时由 applyStatusChip() 按状态映射语义色 -->
+            <TextView
+                android:id="@+id/tv_order_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_status_chip_primary"
+                android:maxLines="1"
+                android:paddingHorizontal="@dimen/space_10"
+                android:paddingVertical="@dimen/space_4"
+                android:textColor="@color/rt_primary"
+                android:textSize="@dimen/text_caption"
+                android:textStyle="bold"
+                android:text="待发货" />
+        </LinearLayout>
+
+        <!-- 运单号：仅「已发货（待收货）」的订单有值，未发货时整行隐藏，避免占位留白 -->
+        <TextView
+            android:id="@+id/tv_tracking_no"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/rt_text_hint"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone"
+            android:text="运单号：SF1234567890" />
+
+        <!-- 退款提示：商家拒绝时显示理由，退款中/已退款时状态列已经说明了，这里不重复 -->
+        <TextView
+            android:id="@+id/tv_refund_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_6"
+            android:textColor="@color/rt_accent"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone"
+            android:text="退款被拒绝" />
+
+        <!-- 分隔线：次要信息区与商品主信息区之间的层次分割 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/space_1"
+            android:layout_marginTop="@dimen/space_12"
+            android:layout_marginBottom="@dimen/space_12"
+            android:background="@color/rt_divider" />
+
+        <!-- 商品区：该订单下的全部商品，运行时按数量动态填充 -->
+        <LinearLayout
+            android:id="@+id/ll_goods"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <!-- 底部：时间·共N件（次要·左）+ 操作按钮（主要·右）。按钮隐藏时本行仅剩时间，不设固定高度以免留白 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_order_time"
+                android:layout_width="@dimen/space_0"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:minWidth="@dimen/space_0"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_caption"
+                android:text="下单时间" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_action"
+                style="@style/RtButton.Secondary"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/size_btn_sm"
+                android:layout_marginStart="@dimen/space_8"
+                android:minWidth="@dimen/space_0"
+                android:minHeight="@dimen/space_0"
+                android:paddingHorizontal="@dimen/space_16"
+                android:text="操作"
+                android:textSize="@dimen/text_label"
+                app:cornerRadius="@dimen/radius_lg" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

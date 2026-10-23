@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AI 助手：商品单卡（横向滑 items 里的每一项）
+  =====================================================
+  固定 108dp 宽、140dp 高，Glide 加载缩略图（如未提供图片则用占位）。
+  名称最多 2 行，单价 1 行（小字），库存/销量 1 行（更小灰字）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/size_108"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/space_8"
+    android:background="@drawable/bg_chat_attachment_item"
+    android:orientation="vertical"
+    android:padding="@dimen/space_6">
+
+    <ImageView
+        android:id="@+id/iv_chat_product_image"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/size_72"
+        android:background="@drawable/bg_chat_attachment_item"
+        android:contentDescription="@string/chat_attachment_product_image_desc"
+        android:scaleType="centerCrop"
+        tools:src="@drawable/avatar_1" />
+
+    <TextView
+        android:id="@+id/tv_chat_product_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="@color/chat_text_ai"
+        android:textSize="@dimen/text_label"
+        tools:text="东北珍珠米 5kg 袋装 新米现磨" />
+
+    <TextView
+        android:id="@+id/tv_chat_product_price"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_2"
+        android:textColor="@color/rt_primary"
+        android:textSize="@dimen/text_label"
+        android:textStyle="bold"
+        tools:text="¥29.90" />
+
+    <TextView
+        android:id="@+id/tv_chat_product_meta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/chat_text_ai_muted"
+        android:textSize="@dimen/text_caption"
+        tools:text="库存 120 件 / 售 89" />
+</LinearLayout>

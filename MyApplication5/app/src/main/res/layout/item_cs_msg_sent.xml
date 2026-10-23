@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  客服消息 - 右侧（客户自己发出）
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="end"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/size_touch"
+    android:paddingTop="@dimen/space_6"
+    android:paddingEnd="@dimen/space_12"
+    android:paddingBottom="@dimen/space_6">
+
+    <TextView
+        android:id="@+id/tv_cs_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_chat_bubble_user"
+        android:lineSpacingExtra="@dimen/space_2"
+        android:paddingStart="@dimen/space_12"
+        android:paddingTop="@dimen/space_8"
+        android:paddingEnd="@dimen/space_12"
+        android:paddingBottom="@dimen/space_8"
+        android:textColor="@color/rt_text_on_primary"
+        android:textSize="@dimen/text_body"
+        android:text="你好" />
+
+    <TextView
+        android:layout_width="@dimen/size_btn_sm"
+        android:layout_height="@dimen/size_btn_sm"
+        android:layout_marginStart="@dimen/space_8"
+        android:background="@drawable/bg_chat_bubble_user"
+        android:gravity="center"
+        android:text="我"
+        android:textColor="@color/rt_text_on_primary"
+        android:textSize="@dimen/text_label"
+        android:textStyle="bold" />
+</LinearLayout>

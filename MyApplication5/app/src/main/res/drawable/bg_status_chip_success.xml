@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 订单状态 chip（成功：已完成）：淡绿底（rt_success_surface）+ 深绿字（rt_success_dark，对比度 4.56:1） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/rt_success_surface" />
+    <corners android:radius="@dimen/radius_md" />
+</shape>

@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  「我的余额」页（WalletActivity）
+  ========================================================================
+  三块：余额卡片 / 充值区（预设金额 + 自定义）/ 余额明细列表。
+  颜色与按钮一律使用项目既有 token（colors.xml 的 rt_*、themes.xml 的 RtButton.*），
+  不新造硬编码色值。
+  返回箭头用 app:navigationIcon（用 android:navigationIcon 会静默失效）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/rt_background"
+    tools:context=".activity.WalletActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rt_primary"
+        android:minHeight="?attr/actionBarSize"
+        app:navigationIcon="@drawable/ic_circle_arrow_back"
+        app:navigationContentDescription="返回"
+        app:titleTextColor="@color/rt_text_on_primary">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/space_10"
+            android:text="我的余额"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_16">
+
+            <!-- ① 余额卡片 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_section_card"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="@dimen/space_20">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="账户余额"
+                    android:textColor="@color/rt_text_secondary"
+                    android:textSize="@dimen/text_body" />
+
+                <TextView
+                    android:id="@+id/tv_wallet_balance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:text="¥0.00"
+                    android:textColor="@color/rt_primary"
+                    android:textSize="@dimen/text_display"
+                    android:textStyle="bold"
+                    tools:text="¥1000.00" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:gravity="center"
+                    android:text="模拟充值：仅用于演示，不对接真实支付通道，充值即时到账"
+                    android:textColor="@color/rt_text_hint"
+                    android:textSize="@dimen/text_label" />
+            </LinearLayout>
+
+            <!-- ② 充值区 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_section_card"
+                android:orientation="vertical"
+                android:padding="@dimen/space_16">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="充值金额"
+                    android:textColor="@color/rt_text_primary"
+                    android:textSize="@dimen/text_body"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/cg_preset_amount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    app:singleLine="false">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_amount_10"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="false"
+                        android:text="¥10"
+                        android:textColor="@color/rt_primary"
+                        app:chipBackgroundColor="@color/rt_surface"
+                        app:chipStrokeColor="@color/rt_primary"
+                        app:chipStrokeWidth="@dimen/space_1" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_amount_50"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="false"
+                        android:text="¥50"
+                        android:textColor="@color/rt_primary"
+                        app:chipBackgroundColor="@color/rt_surface"
+                        app:chipStrokeColor="@color/rt_primary"
+                        app:chipStrokeWidth="@dimen/space_1" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_amount_100"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="false"
+                        android:text="¥100"
+                        android:textColor="@color/rt_primary"
+                        app:chipBackgroundColor="@color/rt_surface"
+                        app:chipStrokeColor="@color/rt_primary"
+                        app:chipStrokeWidth="@dimen/space_1" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_amount_200"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="false"
+                        android:text="¥200"
+                        android:textColor="@color/rt_primary"
+                        app:chipBackgroundColor="@color/rt_surface"
+                        app:chipStrokeColor="@color/rt_primary"
+                        app:chipStrokeWidth="@dimen/space_1" />
+                </com.google.android.material.chip.ChipGroup>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_recharge_amount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:hint="自定义金额（元）"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusBottomEnd="@dimen/radius_md"
+                    app:boxCornerRadiusBottomStart="@dimen/radius_md"
+                    app:boxCornerRadiusTopEnd="@dimen/radius_md"
+                    app:boxCornerRadiusTopStart="@dimen/radius_md"
+                    app:boxStrokeColor="@color/rt_border"
+                    app:prefixText="¥ ">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_recharge_amount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal"
+                        android:maxLength="10" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_recharge"
+                    style="@style/RtButton.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_14"
+                    android:text="确认充值" />
+            </LinearLayout>
+
+            <!-- ③ 余额明细 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_20"
+                android:layout_marginBottom="@dimen/space_8"
+                android:text="余额明细"
+                android:textColor="@color/rt_text_primary"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_tx_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_section_card"
+                android:gravity="center"
+                android:padding="@dimen/space_24"
+                android:text="暂无余额变动记录"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_body"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_transactions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+                android:scrollbars="none" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

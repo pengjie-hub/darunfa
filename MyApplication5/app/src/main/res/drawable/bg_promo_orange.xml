@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  折扣类促销 · 无配图时的占位横幅
+  与 bg_promo_red 结构一致，仅更换为橙色系，用于和满减活动做视觉区分。
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 底色：135° 橙色渐变 -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:startColor="@color/rt_promo_orange_light"
+                android:centerColor="@color/rt_promo_orange"
+                android:endColor="@color/rt_promo_orange_deep"
+                android:angle="135" />
+        </shape>
+    </item>
+
+    <!-- 右上角柔光圆 -->
+    <item
+        android:width="@dimen/size_118"
+        android:height="@dimen/size_118"
+        android:gravity="top|end"
+        android:top="-30dp"
+        android:right="-26dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/rt_white_12" />
+        </shape>
+    </item>
+
+    <!-- 左下角小圆 -->
+    <item
+        android:width="@dimen/size_68"
+        android:height="@dimen/size_68"
+        android:gravity="bottom|start"
+        android:bottom="-28dp"
+        android:left="-16dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/rt_white_08" />
+        </shape>
+    </item>
+</layer-list>

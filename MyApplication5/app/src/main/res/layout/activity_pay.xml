@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  收银台（PayActivity）—— 全站唯一的支付页
+  ========================================================================
+  两种模式（由 intent extra 决定）：
+
+    · 支付模式（传 EXTRA_ORDER_ID）
+      订单已存在，只展示金额并支付；费用明细/券/收货信息三块都隐藏。
+    · 下单模式（传 EXTRA_CART_ITEM_IDS + EXTRA_TOTAL_AMOUNT）
+      购物车结算 / 小发缺地址时使用。额外显示：
+        ll_receipt       费用明细（商品总额 / 活动优惠 / 优惠券 / 应付）
+        ll_coupon_picker 优惠券选择
+        ll_receiver      收货信息（自动带出默认地址，可改）
+
+  优惠明细为什么必须在这一页：以前满减只在后端下单时算，页面上永远显示原价，
+  用户会以为「满 100 减 10 没生效」。现在进页就调 /api/promotions/calc 试算，
+  下单与试算共用后端同一段算法，看到多少就扣多少。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/rt_background"
+    tools:context=".activity.PayActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rt_primary"
+        app:navigationContentDescription="返回"
+        app:navigationIcon="@drawable/ic_circle_arrow_back">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/space_10"
+            android:text="收银台"
+            android:textColor="@color/rt_text_on_primary"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_16">
+
+            <!-- 支付二维码（沿用被替换弹窗里的图） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_section_card"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="@dimen/space_16">
+
+                <LinearLayout
+                    android:layout_width="@dimen/size_160"
+                    android:layout_height="@dimen/size_160"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_12"
+                    android:background="@drawable/bg_search">
+
+                    <ImageView
+                        android:id="@+id/iv_pay_qr"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="支付二维码"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/pay" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:text="请使用微信 / 支付宝扫码完成支付"
+                    android:textColor="@color/rt_text_hint"
+                    android:textSize="@dimen/text_label" />
+            </LinearLayout>
+
+            <!-- 金额卡片 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_section_card"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="@dimen/space_20">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="应付金额"
+                    android:textColor="@color/rt_text_secondary"
+                    android:textSize="@dimen/text_body" />
+
+                <TextView
+                    android:id="@+id/tv_pay_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:text="¥0.00"
+                    android:textColor="@color/rt_primary"
+                    android:textSize="@dimen/text_display"
+                    android:textStyle="bold"
+                    tools:text="¥89.90" />
+
+                <TextView
+                    android:id="@+id/tv_pay_order_no"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:textColor="@color/rt_text_hint"
+                    android:textSize="@dimen/text_label"
+                    tools:text="订单号 DR20260914193000123" />
+            </LinearLayout>
+
+            <!-- 费用明细（仅「下单模式」显示） -->
+            <LinearLayout
+                android:id="@+id/ll_receipt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_section_card"
+                android:orientation="vertical"
+                android:padding="@dimen/space_16"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="@dimen/space_0"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="商品总额"
+                        android:textColor="@color/rt_text_secondary"
+                        android:textSize="@dimen/text_body" />
+
+                    <TextView
+                        android:id="@+id/tv_goods_total"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/rt_text_primary"
+                        android:textSize="@dimen/text_body"
+                        tools:text="¥129.80" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/row_promo_discount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_promo_label"
+                        android:layout_width="@dimen/space_0"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="活动优惠"
+                        android:textColor="@color/rt_text_secondary"
+                        android:textSize="@dimen/text_body" />
+
+                    <TextView
+                        android:id="@+id/tv_promo_discount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/rt_primary"
+                        android:textSize="@dimen/text_body"
+                        tools:text="-¥10.00" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/row_coupon_discount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_coupon_label"
+                        android:layout_width="@dimen/space_0"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="优惠券"
+                        android:textColor="@color/rt_text_secondary"
+                        android:textSize="@dimen/text_body" />
+
+                    <TextView
+                        android:id="@+id/tv_coupon_discount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/rt_primary"
+                        android:textSize="@dimen/text_body"
+                        tools:text="-¥5.00" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_1"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:background="@color/chat_divider" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="@dimen/space_0"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="已优惠"
+                        android:textColor="@color/rt_text_primary"
+                        android:textSize="@dimen/text_body"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_total_discount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/rt_primary"
+                        android:textSize="@dimen/text_subtitle"
+                        android:textStyle="bold"
+                        tools:text="-¥15.00" />
+                </LinearLayout>
+
+                <!-- 未达门槛时提示「再买 ¥50.5 可享满100减10」 -->
+                <TextView
+                    android:id="@+id/tv_promo_hint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:textColor="@color/rt_accent"
+                    android:textSize="@dimen/text_label"
+                    android:visibility="gone"
+                    tools:text="再买 ¥50.5 可享「满 100 减 10（全场通用）」"
+                    tools:visibility="visible" />
+            </LinearLayout>
+
+            <!-- 优惠券选择（仅「下单模式」显示） -->
+            <LinearLayout
+                android:id="@+id/ll_coupon_picker"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_section_card"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="@dimen/space_16"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="@dimen/space_0"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="优惠券"
+                    android:textColor="@color/rt_text_primary"
+                    android:textSize="@dimen/text_body"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_coupon_choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="暂无可用券"
+                    android:textColor="@color/rt_text_hint"
+                    android:textSize="@dimen/text_body"
+                    tools:text="满 ¥100 减 ¥10" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_6"
+                    android:text="›"
+                    android:textColor="@color/rt_text_hint"
+                    android:textSize="@dimen/text_subtitle" />
+            </LinearLayout>
+
+            <!-- 收货信息（仅「下单模式」显示；自动带出默认地址） -->
+            <LinearLayout
+                android:id="@+id/ll_receiver"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_section_card"
+                android:orientation="vertical"
+                android:padding="@dimen/space_16"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="@dimen/space_0"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="收货信息"
+                        android:textColor="@color/rt_text_primary"
+                        android:textSize="@dimen/text_body"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_default_address_tag"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="已用默认地址"
+                        android:textColor="@color/rt_primary"
+                        android:textSize="@dimen/text_label"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_phone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:layout_marginBottom="@dimen/space_12"
+                    android:hint="请输入电话号码"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusBottomEnd="@dimen/radius_md"
+                    app:boxCornerRadiusBottomStart="@dimen/radius_md"
+                    app:boxCornerRadiusTopEnd="@dimen/radius_md"
+                    app:boxCornerRadiusTopStart="@dimen/radius_md"
+                    app:boxStrokeColor="@color/rt_border">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_phone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="phone"
+                        android:maxLength="11" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_address"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="请输入收货地址"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusBottomEnd="@dimen/radius_md"
+                    app:boxCornerRadiusBottomStart="@dimen/radius_md"
+                    app:boxCornerRadiusTopEnd="@dimen/radius_md"
+                    app:boxCornerRadiusTopStart="@dimen/radius_md"
+                    app:boxStrokeColor="@color/rt_border">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_address"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textMultiLine"
+                        android:minLines="3" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <!-- 支付方式 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_20"
+                android:layout_marginBottom="@dimen/space_8"
+                android:text="选择支付方式"
+                android:textColor="@color/rt_text_primary"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold" />
+
+            <RadioGroup
+                android:id="@+id/rg_pay_method"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_section_card"
+                android:paddingStart="@dimen/space_12"
+                android:paddingEnd="@dimen/space_12"
+                android:paddingTop="@dimen/space_4"
+                android:paddingBottom="@dimen/space_4"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/rb_wechat"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:paddingVertical="@dimen/space_10"
+                    android:text="微信支付"
+                    android:textColor="@color/rt_text_primary"
+                    android:textSize="@dimen/text_body" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_1"
+                    android:background="@color/chat_divider" />
+
+                <RadioButton
+                    android:id="@+id/rb_alipay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="@dimen/space_10"
+                    android:text="支付宝"
+                    android:textColor="@color/rt_text_primary"
+                    android:textSize="@dimen/text_body" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_1"
+                    android:background="@color/chat_divider" />
+
+                <RadioButton
+                    android:id="@+id/rb_bank_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="@dimen/space_10"
+                    android:text="银行卡"
+                    android:textColor="@color/rt_text_primary"
+                    android:textSize="@dimen/text_body" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_1"
+                    android:background="@color/chat_divider" />
+
+                <!-- 余额支付：文案与可用状态由 PayActivity.refreshBalanceOption() 运行时刷新
+                     （余额充足→「余额支付（可用 ¥x.xx）」可选；不足→置灰「余额不足 ¥x.xx」） -->
+                <RadioButton
+                    android:id="@+id/rb_balance"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="@dimen/space_10"
+                    android:text="余额支付"
+                    android:textColor="@color/rt_text_primary"
+                    android:textSize="@dimen/text_body" />
+            </RadioGroup>
+
+            <!-- 余额不足时出现：点击进「我的余额」页充值，返回后 onResume 会刷新余额 -->
+            <TextView
+                android:id="@+id/tv_go_recharge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_8"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="@dimen/space_4"
+                android:text="余额不足？去充值"
+                android:textColor="@color/rt_primary"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tv_pay_tip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_12"
+                android:text="支付完成后订单进入「待发货」；未支付可稍后在「我的 → 查看全部订单」继续支付。"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_label" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 底部支付栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/rt_surface"
+        android:orientation="vertical"
+        android:padding="@dimen/space_12"
+        android:elevation="@dimen/elevation_lg">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_confirm_pay"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/size_touch"
+            android:text="确认支付"
+            android:textSize="@dimen/text_subtitle"
+            android:textColor="@color/rt_text_on_primary"
+            app:backgroundTint="@color/rt_primary"
+            app:cornerRadius="@dimen/radius_xl" />
+    </LinearLayout>
+</LinearLayout>

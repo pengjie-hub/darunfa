@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  首页结构（2026-09-14 调整：导航栏下移到「促销活动」下方）
+  ========================================================================
+  需求：
+    ① 顶部导航栏(TabLayout)放到「促销活动」下面；
+    ② 左右滑动 / 点击切换分类时，只切换【商品卡片】，
+       导航栏上方的【分类网格 / 横向轮播 / 促销活动】保持不变。
+
+  实现：整页只有一条纵向滚动链（SwipeAwareNestedScrollView），自上而下顺序为
+       搜索栏 → 分类网格 → 横向轮播 → 促销活动 → TabLayout → 商品区
+     · 共享头部（分类 / 轮播 / 促销）只创建一份、位于 TabLayout 之上，
+       因此切分类时它既不重建、也不横移 —— 稳稳待在原地；
+     · 商品区只是一个 FrameLayout 容器，里面按需 add/hide 各分类的 Fragment
+       （Fragment 内的商品列表 wrap_content 且自身不滚动），
+       所以整页只有一条滚动链，不存在嵌套滚动冲突。
+
+  ⚠️ 为什么这里不用 ViewPager2 承载分类页：
+     ViewPager2 是 final 类无法子类化，且嵌在外层滚动容器里只能靠 wrap_content 量高 ——
+     它切页后不会重新量高度，商品少的分类下方会留一大片空白（实测复现）。
+     因此改为 FrameLayout + 横滑手势（见 SwipeAwareNestedScrollView）。
+  ⚠️ 也不要把这些内容塞回 AppBarLayout：它们合计高度超过手机可用屏高，
+     appbar_scrolling_view_behavior 会把下方商品列表挤出屏幕（历史上踩过的老问题）。
+-->
+<com.example.myapplication.view.SwipeAwareNestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rt_background"
+    android:overScrollMode="never"
+    android:fillViewport="true"
+    tools:context=".fragment.HomeFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- ===== 搜索栏（点击跳转独立搜索页） ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/rt_background">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/rt_primary"
+                android:paddingTop="@dimen/space_8"
+                android:paddingBottom="@dimen/space_12">
+
+                <LinearLayout
+                    android:id="@+id/search_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_40"
+                    android:layout_marginStart="@dimen/space_16"
+                    android:layout_marginEnd="@dimen/space_16"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_search"
+                    android:paddingStart="@dimen/space_14"
+                    android:paddingEnd="@dimen/space_14"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:elevation="@dimen/elevation_sm">
+
+                    <ImageView
+                        android:layout_width="@dimen/space_20"
+                        android:layout_height="@dimen/space_20"
+                        android:src="@drawable/ic_search"
+                        android:tint="@color/rt_text_hint"
+                        android:contentDescription="搜索" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_10"
+                        android:text="搜索商品..."
+                        android:textColor="@color/rt_text_hint"
+                        android:textSize="@dimen/text_body" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ===== 共享头部：分类网格 + 横向轮播 + 促销活动 =====
+             只创建一份，位于 TabLayout 之上 → 切分类时保持不变。
+             由 HomeFragment 通过 HomeHeaderBinder 绑定。 -->
+        <include
+            android:id="@+id/home_header"
+            layout="@layout/layout_home_header" />
+
+        <!-- ===== 分类导航栏（位于促销活动下方） =====
+             页签数量 = 1(精选) + 后端一级分类数，会随后端变化，故用 scrollable。 -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:layout_marginStart="@dimen/space_12"
+            android:layout_marginEnd="@dimen/space_12"
+            android:background="@drawable/bg_section_card"
+            android:elevation="@dimen/elevation_sm"
+            app:tabIndicatorColor="@color/rt_primary"
+            app:tabIndicatorHeight="@dimen/space_4"
+            app:tabSelectedTextColor="@color/rt_primary"
+            app:tabTextColor="@color/rt_text_secondary"
+            app:tabMode="scrollable"
+            app:tabGravity="center"
+            app:tabMinWidth="@dimen/space_64"
+            app:tabRippleColor="@color/rt_ripple" />
+
+        <!-- ===== 商品区：只有这一块随分类切换 =====
+             容器里按需 add/hide 各分类的 Fragment；每个 Fragment 的商品列表
+             wrap_content + 自身不滚动（见 fragment_recommend.xml），滚动都交给外层。 -->
+        <FrameLayout
+            android:id="@+id/goods_host"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+</com.example.myapplication.view.SwipeAwareNestedScrollView>

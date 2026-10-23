@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 订单状态 chip（警示橙：退款中 / 已退款 / 已退货）：淡橙底（rt_tag_highlight_surface）+ 深橙字（rt_tag_highlight_dark，对比度 5.11:1） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/rt_tag_highlight_surface" />
+    <corners android:radius="@dimen/radius_md" />
+</shape>

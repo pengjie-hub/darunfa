@@ -1,0 +1,11 @@
+<!-- 出示购物卡图标 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/space_24"
+    android:height="@dimen/space_24"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorOnSurface">
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="M18,4H6C4.89,4 4,4.89 4,6v12c0,1.11 0.89,2 2,2h12c1.11,0 2,-0.89 2,-2V6C20,4.89 19.11,4 18,4zM8,16H6v-2h2V16zM8,12H6v-2h2V12zM8,8H6V6h2V8zM12,16H10v-2h2V16zM12,12H10v-2h2V12zM12,8H10V6h2V8zM16,16h-2v-2h2V16zM16,12h-2v-2h2V12zM16,8h-2V6h2V8z" />
+</vector>

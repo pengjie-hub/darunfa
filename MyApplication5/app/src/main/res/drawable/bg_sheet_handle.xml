@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 半屏助手下拉手柄：浅灰圆角短条 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="@dimen/radius_sm" />
+    <solid android:color="@color/rt_text_disabled" />
+</shape>

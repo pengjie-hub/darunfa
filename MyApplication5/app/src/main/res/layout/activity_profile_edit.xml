@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/rt_background">
+
+    <!-- 顶部工具栏 -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/rt_primary"
+        app:navigationIcon="@drawable/baseline_arrow_back_24"
+        app:title="编辑个人信息"
+        app:titleTextColor="@color/rt_text_on_primary" />
+
+    <!-- ============ 表单状态(加载成功时显示) ============ -->
+    <ScrollView
+        android:id="@+id/form_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_16">
+
+            <!-- 头像选择区 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_section_card"
+                android:padding="@dimen/space_16"
+                android:elevation="@dimen/elevation_sm">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="选择头像"
+                    android:textColor="@color/rt_text_primary"
+                    android:textSize="@dimen/text_body"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="@dimen/space_12">
+
+                    <ImageView
+                        android:id="@+id/iv_current_avatar"
+                        android:layout_width="@dimen/space_64"
+                        android:layout_height="@dimen/space_64"
+                        android:src="@drawable/avatar_1"
+                        android:scaleType="centerCrop"
+                        android:background="@drawable/circle_shape"
+                        android:clipToOutline="true"
+                        android:outlineProvider="background" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_12"
+                        android:text="点击下方头像进行更换"
+                        android:textColor="@color/rt_text_hint"
+                        android:textSize="@dimen/text_label" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/ll_avatar_options"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:gravity="center_horizontal" />
+            </LinearLayout>
+
+            <!-- 基本信息表单 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_section_card"
+                android:padding="@dimen/space_16"
+                android:elevation="@dimen/elevation_sm">
+
+                <!-- 登录账号(只读) -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="登录账号"
+                    android:textColor="@color/rt_text_hint"
+                    android:textSize="@dimen/text_label" />
+
+                <TextView
+                    android:id="@+id/tv_username_readonly"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:text="—"
+                    android:textColor="@color/rt_text_primary"
+                    android:textSize="@dimen/text_subtitle"
+                    android:textStyle="bold"
+                    android:paddingVertical="@dimen/space_10" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_6"
+                    android:text="登录账号用于身份认证，不可修改"
+                    android:textColor="@color/rt_text_hint"
+                    android:textSize="@dimen/text_caption" />
+
+                <!-- 昵称 -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_nickname"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="昵称"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusBottomEnd="@dimen/radius_md"
+                    app:boxCornerRadiusBottomStart="@dimen/radius_md"
+                    app:boxCornerRadiusTopEnd="@dimen/radius_md"
+                    app:boxCornerRadiusTopStart="@dimen/radius_md"
+                    app:boxStrokeColor="@color/rt_border"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="20"
+                    app:errorEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_nickname"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:maxLength="20"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 手机号 -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_phone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:hint="手机号(选填)"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusBottomEnd="@dimen/radius_md"
+                    app:boxCornerRadiusBottomStart="@dimen/radius_md"
+                    app:boxCornerRadiusTopEnd="@dimen/radius_md"
+                    app:boxCornerRadiusTopStart="@dimen/radius_md"
+                    app:boxStrokeColor="@color/rt_border"
+                    app:errorEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_phone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="phone"
+                        android:maxLength="11"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <!-- 修改密码区(独立卡片) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_section_card"
+                android:padding="@dimen/space_16"
+                android:elevation="@dimen/elevation_sm">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="修改密码"
+                    android:textColor="@color/rt_text_primary"
+                    android:textSize="@dimen/text_body"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:text="如需修改密码，请填写以下三项；不需要修改则全部留空"
+                    android:textColor="@color/rt_text_hint"
+                    android:textSize="@dimen/text_caption" />
+
+                <!-- 原密码 -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_old_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:hint="原密码"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusBottomEnd="@dimen/radius_md"
+                    app:boxCornerRadiusBottomStart="@dimen/radius_md"
+                    app:boxCornerRadiusTopEnd="@dimen/radius_md"
+                    app:boxCornerRadiusTopStart="@dimen/radius_md"
+                    app:boxStrokeColor="@color/rt_border"
+                    app:errorEnabled="true"
+                    app:passwordToggleEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_old_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:maxLength="20"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 新密码 -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:hint="新密码(留空则不修改)"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusBottomEnd="@dimen/radius_md"
+                    app:boxCornerRadiusBottomStart="@dimen/radius_md"
+                    app:boxCornerRadiusTopEnd="@dimen/radius_md"
+                    app:boxCornerRadiusTopStart="@dimen/radius_md"
+                    app:boxStrokeColor="@color/rt_border"
+                    app:errorEnabled="true"
+                    app:passwordToggleEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:maxLength="20"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 确认密码 -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_confirm_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:hint="确认新密码"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusBottomEnd="@dimen/radius_md"
+                    app:boxCornerRadiusBottomStart="@dimen/radius_md"
+                    app:boxCornerRadiusTopEnd="@dimen/radius_md"
+                    app:boxCornerRadiusTopStart="@dimen/radius_md"
+                    app:boxStrokeColor="@color/rt_border"
+                    app:errorEnabled="true"
+                    app:passwordToggleEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_confirm_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:maxLength="20"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <!-- 保存按钮 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_save"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_24"
+                android:text="保存修改"
+                android:textSize="@dimen/text_subtitle"
+                android:textStyle="bold"
+                app:cornerRadius="@dimen/radius_md"
+                app:backgroundTint="@color/rt_primary" />
+
+            <!-- 提示文本 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_12"
+                android:gravity="center"
+                android:text="修改后的数据将自动同步到个人中心"
+                android:textColor="@color/rt_text_hint"
+                android:textSize="@dimen/text_label" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ============ 错误空状态(加载失败时显示) ============ -->
+    <LinearLayout
+        android:id="@+id/error_state"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="@dimen/space_32"
+        android:visibility="visible">
+
+        <ImageView
+            android:layout_width="@dimen/size_120"
+            android:layout_height="@dimen/size_120"
+            android:src="@drawable/ic_error_outline"
+            android:contentDescription="加载失败" />
+
+        <TextView
+            android:id="@+id/tv_error_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_20"
+            android:text="用户信息加载失败"
+            android:textColor="@color/rt_text_primary"
+            android:textSize="@dimen/text_subtitle"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_error_desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_10"
+            android:gravity="center"
+            android:text="本地缓存中没有该用户的资料,可能是登录后数据未及时同步。请尝试重试或重新登录。"
+            android:textColor="@color/rt_text_hint"
+            android:textSize="@dimen/text_body"
+            android:lineSpacingExtra="@dimen/space_4" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_retry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_32"
+            android:layout_marginHorizontal="@dimen/space_24"
+            android:text="重 试"
+            android:textSize="@dimen/text_body"
+            android:textStyle="bold"
+            app:cornerRadius="@dimen/radius_md"
+            app:backgroundTint="@color/rt_primary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_offline_edit"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:layout_marginHorizontal="@dimen/space_24"
+            android:text="离线编辑"
+            android:textSize="@dimen/text_body"
+            app:cornerRadius="@dimen/radius_md"
+            app:strokeColor="@color/rt_primary"
+            android:textColor="@color/rt_primary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_relogin"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:layout_marginHorizontal="@dimen/space_24"
+            android:text="重新登录"
+            android:textSize="@dimen/text_body"
+            android:textColor="@color/rt_text_hint" />
+    </LinearLayout>
+
+    <!-- ============ 加载状态(留扩展位, 当前瞬时加载默认不显示) ============ -->
+    <LinearLayout
+        android:id="@+id/loading_state"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_0"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:layout_width="@dimen/size_touch"
+            android:layout_height="@dimen/size_touch"
+            android:indeterminateTint="@color/rt_primary" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:text="正在加载个人信息..."
+            android:textColor="@color/rt_text_hint"
+            android:textSize="@dimen/text_body" />
+    </LinearLayout>
+</LinearLayout>

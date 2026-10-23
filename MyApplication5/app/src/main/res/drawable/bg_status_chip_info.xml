@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 订单状态 chip（信息：待收货 / 待评价）：淡紫底（rt_info_surface）+ 深蓝字（rt_info_dark，对比度 4.90:1） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/rt_info_surface" />
+    <corners android:radius="@dimen/radius_md" />
+</shape>
