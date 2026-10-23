@@ -1,3 +1,8 @@
+<script>
+// 模块作用域计数器：跨组件实例共享，用于渐变 defs 的唯一 id
+let trendUidSeq = 0
+</script>
+
 <script setup>
 /**
  * TrendChart.vue —— 销售趋势折线 + 面积图（仪表盘：近 7 天销售趋势）。
@@ -69,8 +74,9 @@ function draw() {
   }
 
   // trendChart 内部计数器 —— 生成渐变 defs 的唯一 id
-  TrendChart._id = (TrendChart._id || 0) + 1
-  const uid = 'trend-' + TrendChart._id
+  // 注意：不能在 <script setup> 里写 TrendChart._id 引用组件自身（未声明标识符，会抛 ReferenceError），
+  // 改用模块作用域的计数器（见文末普通 <script> 块）
+  const uid = 'trend-' + (++trendUidSeq)
 
   const W = 960, H = 300
   const margin = { top: 18, right: 32, bottom: 48, left: 74 }
