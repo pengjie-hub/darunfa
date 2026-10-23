@@ -1,0 +1,31 @@
+/**
+ * Element Plus 主题覆盖：对齐 admin-theme.css 的 design tokens。
+ * 品牌锚点 --brand-500 = #DE1313（大润发红）。
+ */
+:root {
+  --el-color-primary: var(--brand-500, #DE1313);
+  --el-color-primary-light-3: var(--brand-500, #DE1313);
+  --el-color-primary-light-5: var(--brand-300, #F79E9E);
+  --el-color-primary-light-7: var(--brand-100, #FDE0E0);
+  --el-color-primary-light-9: var(--brand-50, #FEF3F3);
+  --el-color-primary-dark-2: var(--brand-700, #931512);
+
+  --el-color-success: var(--success-500, #2E7D32);
+  --el-color-warning: var(--warning, #FF7A1A);
+  --el-color-danger:  var(--error-500, #DE1313);
+  --el-color-info:    var(--info, #1565C0);
+
+  --el-border-radius-base: 4px;
+  --el-font-size-base: 14px;
+}
+
+/* 覆盖 Element Plus 自带的全局字体 —— 让 admin-theme.css 的 --font-sans 生效 */
+html, body, .admin-app {
+  font-family: var(--font-sans, "PingFang SC", "Microsoft YaHei", sans-serif);
+}
+
+/* admin-theme.css 里 .btn 等全局类与 Element Plus .el-button 等冲突的处理：
+ * admin-theme.css 已在 element-plus.css 之后引入，其全局选择器会覆盖组件样式。
+ * 这里不重置 —— 但必须把 admin-theme.css 的全局 body/table 等选择器限定在 .admin-app 下。
+ * 详见 admin-theme.css 底部新增的作用域说明。
+ */
