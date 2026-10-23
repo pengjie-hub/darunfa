@@ -4,6 +4,11 @@ import { api } from '@/api/http'
 export function listProducts() {
   return api('/admin/products')
 }
+
+/** 低库存商品（库存 ≤ LOW_STOCK_THRESHOLD），库存管理页专用 */
+export function listLowStock() {
+  return api('/admin/products/low-stock')
+}
 export function createProduct(body) {
   return api('/admin/products', 'POST', body)
 }
