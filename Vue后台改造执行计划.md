@@ -46,14 +46,18 @@
 ## 2. 项目初始化步骤（逐条可执行）
 
 ```powershell
-# 2.0 版本控制基线（当前目录不是 git 仓库，必须先做，否则 P0 的回滚承诺是空的）
+# 2.0 版本控制基线（已于 2026-10-23 完成，见下方状态说明）
 cd C:\Users\25136\Desktop\darunfa
-git init
+git init -b main
 git add -A
-git commit -m "chore: 改造前基线快照（含 admin.html / xiaoyun-action.* / admin-theme.css）"
+git commit -m "chore: 基线提交（Vue 后台改造前存档）"
 git checkout -b feature/vue-admin
-# 首次提交前确认 .gitignore 已排除：node_modules/  target/  dist/  .workbuddy/  .idea/  *.zip
+```
 
+> **2.0 已完成（2026-10-23）**：`.gitignore` 已建立（排除 `node_modules/` `dist/` `target/` `build/` `.gradle/` `.workbuddy/` `.idea/` `.vscode/` `*.zip`），基线提交 `ca4796d` 已落库，共 658 个文件，`main` 与 `feature/vue-admin` 两个分支均指向该提交，工作区干净。当前处于 **`feature/vue-admin`** 分支，后续改造均在此分支进行；出问题 `git checkout main` 即回到改造前状态。
+> 已知未入库项：`*.zip`（3 个 104M 备份包）按 `.gitignore` 排除在外 —— 若需一并归档，应改用 Git LFS 或外部网盘，不要直接 `git add`。
+
+```powershell
 # 2.1 环境确认（PowerShell 5.1 不支持 &&，命令逐行执行）
 node -v      # 必须 >= 20.19，推荐 22.x（本机 24.21.0 已验证）
 npm -v
