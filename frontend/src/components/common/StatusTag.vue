@@ -1,53 +1,28 @@
 <script setup>
 /**
- * StatusTag.vue —— 状态/风险/支付/物流的彩色角标。
+ * StatusTag.vue —— 状态 / 风险 角标。
  *
- * 替代 admin.html 里 `statusBadge(status, ORDER_STATUS)` 这类模板字符串拼接。
+ * 样式全部由 admin-theme.css 全局接管，本组件**不写任何 scoped 样式**：
+ *   普通状态 → .badge.{green|red|orange|blue|gray|primary}   （admin-theme.css 446-459 行）
+ *   风险等级 → .risk-badge.{HIGH|MEDIUM|LOW|NONE}            （admin-theme.css 669-673 行）
  *
- * props:
- *   text  : string  显示文本
- *   color : 'green' | 'red' | 'orange' | 'blue' | 'gray' | string（hex/css var）
- *   size  : 'sm' | 'md'  默认 'sm'
- *   risk  : boolean  如果是风险角标，应用 .risk-badge / HIGH|MEDIUM|LOW 颜色
+ * 与 admin.html 的 `statusBadge()` / `riskBadgeOf()` 输出完全一致，避免自绘色值漂移。
  */
 import { computed } from 'vue'
 
 const props = defineProps({
   text:  { type: String, required: true },
-  color: { type: String, default: 'gray' },
-  size:  { type: String, default: 'sm' },
+  color: { type: String, default: 'gray' },  // badge 颜色，或风险等级 HIGH/MEDIUM/LOW/NONE
   risk:  { type: Boolean, default: false }
 })
 
-const classes = computed(() => {
-  const c = ['status-tag', `tag-${props.color}`, `size-${props.size}`]
-  if (props.risk) c.push('risk-badge', props.color.toUpperCase())
-  return c
-})
+const classes = computed(() =>
+  props.risk
+    ? ['risk-badge', String(props.color).toUpperCase()]
+    : ['badge', props.color]
+)
 </script>
 
 <template>
   <span :class="classes">{{ text }}</span>
 </template>
-
-<style scoped>
-.status-tag {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 3px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.6;
-}
-.status-tag.size-sm { padding: 1px 8px; font-size: 11px; line-height: 1.5; }
-.tag-green  { background: #e8f5e9; color: #2e7d32; }
-.tag-red    { background: #ffebee; color: #c62828; }
-.tag-orange { background: #fff3e0; color: #ef6c00; }
-.tag-blue   { background: #e3f2fd; color: #1565C0; }
-.tag-gray   { background: #f0f0f0; color: #666; }
-
-/* 风险角标样式（对齐 admin.css .risk-badge） */
-.risk-badge.HIGH   { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-.risk-badge.MEDIUM { background: #fff3e0; color: #ef6c00; border: 1px solid #ffcc80; }
-.risk-badge.LOW    { background: #fffde7; color: #f9a825; border: 1px solid #fff59d; }
-</style>
