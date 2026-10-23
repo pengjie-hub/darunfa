@@ -206,25 +206,36 @@ onMounted(load)
         <button class="btn ghost sm" @click="go('/orders')">前往发货 →</button>
       </div>
       <div class="panel-body">
-        <el-table :data="overdueShips" size="small" stripe>
-          <el-table-column prop="orderNo" label="订单号" width="220">
-            <template #default="{ row }">{{ row.orderNo || '-' }}</template>
-          </el-table-column>
-          <el-table-column prop="userName" label="下单用户" width="140">
-            <template #default="{ row }">{{ row.userName || '-' }}</template>
-          </el-table-column>
-          <el-table-column label="订单金额" width="130">
-            <template #default="{ row }"><b>{{ fmtMoney(row.payAmount) }}</b></template>
-          </el-table-column>
-          <el-table-column label="付款时间" width="190">
-            <template #default="{ row }">{{ fmtDateTime(row.paidAt) }}</template>
-          </el-table-column>
-          <el-table-column label="已等待" width="100">
-            <template #default="{ row }">
-              <span :class="['days-badge', row.waitingDays >= 3 ? 'danger' : 'warn']">{{ row.waitingDays }} 天</span>
-            </template>
-          </el-table-column>
-        </el-table>
+        <!-- 原生 table：admin-theme.css 的 th/td 规则（13px / padding 13px 16px / 表头 11px 大写）才会生效 -->
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>订单号</th>
+                <th>下单用户</th>
+                <th>订单金额</th>
+                <th>付款时间</th>
+                <th>已等待</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in overdueShips" :key="row.orderNo">
+                <td>{{ row.orderNo || '-' }}</td>
+                <td>{{ row.userName || '-' }}</td>
+                <td><b>{{ fmtMoney(row.payAmount) }}</b></td>
+                <td>{{ fmtDateTime(row.paidAt) }}</td>
+                <td>
+                  <span class="badge" :class="row.waitingDays >= 3 ? 'red' : 'orange'">
+                    {{ row.waitingDays }} 天
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="!overdueShips.length">
+                <td colspan="5" class="empty">暂无超时未发货订单</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <div class="hint-text">
           共 <b>{{ overdueCount }}</b> 笔超时订单，合计 <b>{{ fmtMoney(overdueAmount) }}</b>
           <template v-if="overdueCount > overdueShips.length">
@@ -341,8 +352,11 @@ onMounted(load)
 <style scoped>
 .dash-wrap { padding: 0; }
 
-/* 超时未发货面板的红色左边框（admin-theme.css 无此变体） */
-.panel.panel-danger { border-left: 3px solid var(--brand-500); }
+/* 超时未发货面板：旧页是「四周 1px 浅红 + 左边 3px 实红」，与 admin-theme 的普通 .panel 区分开 */
+.panel.panel-danger {
+  border-color: var(--error-200);
+  border-left: 3px solid var(--brand-500);
+}
 
 /* 退款 + 风险并排容器（admin-theme.css 无；和 .chart-grid 语义不同，单独给一个 grid） */
 .panel-grid {
@@ -375,16 +389,6 @@ onMounted(load)
 /* 面板内的辅助说明文字（admin-theme.css 只有 .stat-card .trend，面板里没有） */
 .hint-text { margin-top: 12px; font-size: 13px; color: var(--text-400); }
 .hint-small { font-size: 12px; color: var(--text-400); }
-
-/* 超时等待天数徽章（admin-theme.css 无） */
-.days-badge {
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 600;
-}
-.days-badge.warn   { background: var(--warning); color: #fff; }
-.days-badge.danger { background: var(--destructive); color: #fff; }
 
 /* 小屏响应（只改 panel-grid，其他保持 admin-theme.css 默认） */
 @media (max-width: 900px) {

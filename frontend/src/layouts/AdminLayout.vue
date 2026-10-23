@@ -1,4 +1,16 @@
 <script setup>
+/**
+ * AdminLayout.vue —— 后台外壳。
+ *
+ * 关键约束：**样式全部交给 admin-theme.css 的全局类**，本文件不写任何 scoped 样式。
+ * DOM 结构逐字复刻 admin.html 行 14-55：
+ *   .app > .sidebar(.brand>.mark+.title+.subtitle, nav>a>.ico+文本, .foot)
+ *        + .main(.topbar>.page-title + .user-area>.user-name+.role-badge.r-XXX+.btn.ghost.sm, .content)
+ *
+ * 自绘样式（.admin-app/.logo/.nav-item/.breadcrumb/.role-tag）已全部删除 ——
+ * 它们规避了 admin-theme 的 sidebar 248px / topbar 64px / radius / 字体变量，
+ * 是此前仪表盘「跟旧页不一样」的主要原因之一。
+ */
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -8,25 +20,43 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 
-// 与 router/index.js 的 children 保持一致 —— 仅渲染可见项
-const navItems = computed(() => {
-  return router.options.routes
-    .find(r => r.path === '/')?.children || []
-})
-
-function isVisible(item) {
-  if (!item.meta) return false
-  if (item.meta.adminOnly && auth.role !== 'ADMIN') return false
-  if (item.meta.permission) {
-    const codes = item.meta.permission.split(',').map(s => s.trim())
-    return codes.some(c => auth.hasPerm(c))
-  }
-  return true
+// 侧栏图标：与 admin.html 行 24-39 逐项对应（router meta 里没存 icon，集中维护在这里）
+const ICONS = {
+  dashboard:   '📊',
+  products:    '🛒',
+  orders:      '📦',
+  refunds:     '💰',
+  risk:        '🛡️',
+  stock:       '📉',
+  members:     '👥',
+  roles:       '🛡️',
+  permissions: '🔑',
+  reviews:     '💬',
+  cs:          '🎧',
+  categories:  '🗂️',
+  promotions:  '🏷️',
+  payments:    '💳',
+  shipments:   '🚚',
+  knowledge:   '📚'
 }
 
-function isActive(item) {
-  return route.path === `/${item.path}`
-}
+const navItems = computed(() =>
+  router.options.routes.find(r => r.path === '/')?.children || []
+)
+
+// 权限过滤：adminOnly 只对 ADMIN 可见；permission 逗号分隔为 OR 语义
+const visibleNav = computed(() =>
+  navItems.value.filter(item => {
+    if (!item.meta) return false
+    if (item.meta.adminOnly) return auth.role === 'ADMIN'
+    if (item.meta.permission) {
+      return item.meta.permission.split(',').map(s => s.trim()).some(c => auth.hasPerm(c))
+    }
+    return true
+  })
+)
+
+function isActive(item) { return route.path === `/${item.path}` }
 
 async function onLogout() {
   try {
@@ -40,130 +70,54 @@ async function onLogout() {
 </script>
 
 <template>
-  <div class="admin-app">
+  <div class="app">
     <aside class="sidebar">
-      <div class="logo">
-        <span class="logo-icon">润</span>
-        <span class="logo-text">电商后台管理</span>
-        <span class="logo-sub">大润发风格 v2.0</span>
+      <div class="brand">
+        <div class="mark">润</div>
+        <div>
+          <div class="title">电商后台管理</div>
+          <div class="subtitle">大润发风格 v2.0</div>
+        </div>
       </div>
-      <nav class="nav">
+
+      <nav>
         <router-link
-          v-for="item in navItems.filter(isVisible)"
+          v-for="item in visibleNav"
           :key="item.path"
           :to="`/${item.path}`"
-          class="nav-item"
           :class="{ active: isActive(item) }"
         >
-          {{ item.meta?.title }}
+          <span class="ico">{{ ICONS[item.path] || '•' }}</span>
+          <span>{{ item.meta?.title }}</span>
         </router-link>
       </nav>
+
+      <div class="foot">小发智购运营后台</div>
     </aside>
+
     <div class="main">
-      <header class="topbar">
-        <div class="topbar-left">
-          <span class="breadcrumb">{{ route.meta.title }}</span>
+      <div class="topbar">
+        <div class="page-title">{{ route.meta.title }}</div>
+        <div class="user-area">
+          <span class="user-name">{{ auth.user?.nickname || auth.user?.username || '管理员' }}</span>
+          <span v-if="auth.role" class="role-badge" :class="`r-${auth.role}`">{{ auth.role }}</span>
+          <button class="btn ghost sm" @click="onLogout">退出</button>
         </div>
-        <div class="topbar-right">
-          <span class="user-info">
-            {{ auth.user?.nickname || auth.user?.username || '管理员' }}
-            <span v-if="auth.role" class="role-tag">{{ auth.role }}</span>
-          </span>
-          <button class="logout-btn" @click="onLogout">退出</button>
-        </div>
-      </header>
-      <main class="content">
+      </div>
+
+      <div class="content">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>
-      </main>
+      </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-.admin-app {
-  display: flex;
-  min-height: 100vh;
-  background: #f5f6f8;
-  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 14px;
-  color: #333;
-}
-.sidebar {
-  width: 220px;
-  background: #fff;
-  border-right: 1px solid #eee;
-  padding: 16px 0;
-  flex-shrink: 0;
-}
-.logo {
-  padding: 0 20px 20px;
-  border-bottom: 1px solid #f0f0f0;
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.logo-icon {
-  display: inline-block;
-  width: 24px; height: 24px; line-height: 24px;
-  background: var(--brand-500, #DE1313);
-  color: #fff; border-radius: 4px;
-  text-align: center; font-size: 13px; font-weight: 600;
-  margin-right: 6px;
-}
-.logo-text { font-size: 14px; font-weight: 600; color: var(--brand-700, #931512); }
-.logo-sub { font-size: 11px; color: #999; }
-.nav { padding: 12px 0; }
-.nav-item {
-  display: block;
-  padding: 10px 20px;
-  color: #555;
-  text-decoration: none;
-  font-size: 14px;
-  border-left: 3px solid transparent;
-}
-.nav-item:hover { background: #fef3f3; color: var(--brand-500, #DE1313); }
-.nav-item.active {
-  background: #fde8e8;
-  color: var(--brand-500, #DE1313);
-  border-left-color: var(--brand-500, #DE1313);
-  font-weight: 600;
-}
-.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.topbar {
-  height: 56px;
-  background: #fff;
-  border-bottom: 1px solid #eee;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px;
-}
-.breadcrumb { font-size: 15px; font-weight: 600; color: #222; }
-.topbar-right { display: flex; align-items: center; gap: 16px; }
-.user-info { color: #555; font-size: 14px; }
-.role-tag {
-  display: inline-block;
-  padding: 1px 8px;
-  margin-left: 6px;
-  font-size: 11px;
-  background: #eef3ff;
-  color: #1565C0;
-  border-radius: 3px;
-}
-.logout-btn {
-  padding: 5px 14px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  color: #666;
-}
-.logout-btn:hover { border-color: var(--brand-500, #DE1313); color: var(--brand-500, #DE1313); }
-.content { flex: 1; padding: 24px; overflow: auto; }
+<style>
+/* 仅保留页面切换淡入淡出（admin-theme.css 没有，且必须是全局非 scoped 才能作用于 transition 类） */
 .fade-enter-active, .fade-leave-active { transition: opacity .15s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

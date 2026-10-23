@@ -2,7 +2,7 @@
    大润发电商后台管理系统 — Claude 设计系统主题（锚点 --brand-500 = #DE1313，与 App rt_primary 一致）
    Source: Claude Design Library
    ============================================================ */
-/* Google Fonts @import 已删除：离线环境会阻塞首屏，字体回退到系统栈 (PingFang SC / Microsoft YaHei) */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,18..72,300;0,18..72,400;0,18..72,500;1,18..72,400&family=Geist+Mono:wght@400;500&display=swap');
 
 :root {
   /* ── Claude 原始 token ── 品牌色阶=大润发红；50~400 禁承白字，500~900 可承白字 */
