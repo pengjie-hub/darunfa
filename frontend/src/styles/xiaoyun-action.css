@@ -2,8 +2,8 @@
  * 小运 · 操作确认卡片样式
  * ============================================================================
  * 作用域：全部 .xy- 前缀，绝不碰 admin-theme.css 里已有的任何选择器。
- * 主题：只用 admin-theme.css :root 里已定义的语义变量（--card/--border-*/--text-*/
- *       --brand-*/--success-*/--error-*/--radius*/--shadow*），因此跟随主题走，
+ * 主题：只用 admin-theme.css :root 里已定义的语义变量（--card / --border-* / --text-*
+ *       --brand-* / --success-* / --error-* / --radius* / --shadow*），因此跟随主题走，
  *       不需要在 admin-theme.css 里加任何东西（也就不需要 bump 缓存串）。
  * 尺寸：卡片宽度受 .ai-msg 的 max-width 约束（父容器 #aiMessages 内），
  *       这里统一 width:100% + box-sizing，窄屏（<520px）退化时不横向溢出。
@@ -480,4 +480,41 @@
 .xy-pending-list {
     display: block;
     width: 100%;
+}
+
+/* ============================================================================
+ * 可见提示条（Vue 版新增）
+ * ============================================================================
+ * 用途只有两个，且都是「绝不静默」的兜底：
+ *   1. 提案结构不可用（缺 confirm.path / 已过期）→ 说清楚为什么没有卡片；
+ *   2. 本轮 0 卡但答复在讲卡片 → 补加载结果 / 引导「重新准备一次」。
+ * 刻意比 .xy-card 更轻（无左侧色带、无阴影），因为它是一条「说明」不是「面板」；
+ * 也不复用 .ai-msg.bot.error（那是红色错误语义，会把可恢复的引导画成事故）。
+ * ==========================================================================*/
+.xy-notice {
+    align-self: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 6px 0 2px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-200, #e3e0d4);
+    border-radius: var(--radius-md, 8px);
+    font-size: 12.5px;
+    line-height: 1.6;
+    text-align: left;
+    word-break: break-word;
+}
+
+/* 橙色：需要运营做点什么（重新准备 / 本轮没卡） */
+.xy-notice-warn {
+    background: #fdf0d8;
+    border-color: #f0dcb0;
+    color: #8a5a00;
+}
+
+/* 灰色：纯告知（已补加载 N 张） */
+.xy-notice-info {
+    background: var(--bg-200, #f5f4ef);
+    border-color: var(--border-200, #e3e0d4);
+    color: var(--text-700, #46443b);
 }

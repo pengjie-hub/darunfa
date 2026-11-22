@@ -11,6 +11,8 @@ import { useAuthStore } from './stores/auth'
 // 全局样式（引入顺序：Element Plus 内置 → admin-theme.css → element-overrides.css）
 import './styles/admin-theme.css'
 import './styles/element-overrides.css'
+// 小运操作确认卡片样式（`.xy-` 前缀，与旧后台 admin.html 共用同一份）
+import './styles/xiaoyun-action.css'
 
 const app = createApp(App)
 app.use(createPinia())

@@ -11,14 +11,41 @@
  * 它们规避了 admin-theme 的 sidebar 248px / topbar 64px / radius / 字体变量，
  * 是此前仪表盘「跟旧页不一样」的主要原因之一。
  */
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
+import { usePolling } from '@/composables/usePolling'
 import { ElMessageBox } from 'element-plus'
+import AiAssistant from '@/components/AiAssistant.vue'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const app = useAppStore()
+
+// 侧栏未读角标：退款 / 风险 / 客服，30s 一轮（Tab 隐藏自动暂停，离开布局自动清理）
+usePolling(() => app.refreshBadges(), { interval: 30000 })
+
+const BADGES = {
+  refunds: () => app.refundUnread,
+  risk:    () => app.riskUnread,
+  cs:      () => app.csUnread
+}
+
+function badgeCount(path) {
+  return BADGES[path] ? BADGES[path]() : 0
+}
+
+function badgeText(n) {
+  return n > 99 ? '99+' : String(n)
+}
+
+// 顶栏角色徽章文案与 admin.html roleLabel() 保持一致（徽章显示角色名而非权限码）
+const ROLE_LABELS = { ADMIN: '超级管理员', OPS: '运营专员', CS: '客服', USER: '普通用户' }
+function roleLabel(role) {
+  return ROLE_LABELS[role] || role || ''
+}
 
 // 侧栏图标：与 admin.html 行 24-39 逐项对应（router meta 里没存 icon，集中维护在这里）
 const ICONS = {
@@ -58,6 +85,14 @@ const visibleNav = computed(() =>
 
 function isActive(item) { return route.path === `/${item.path}` }
 
+// 窄视口下侧栏会溢出（旧页 nav scrollHeight 939 > 可见 726）：
+// 旧页点击导航会把当前项滚入视口，这里保持同样的行为，否则直接用 URL 进入时当前项在视野外
+const navEl = ref(null)
+watch(() => route.path, async () => {
+  await nextTick()
+  navEl.value?.querySelector('a.active')?.scrollIntoView({ block: 'nearest' })
+})
+
 async function onLogout() {
   try {
     await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
@@ -80,7 +115,7 @@ async function onLogout() {
         </div>
       </div>
 
-      <nav>
+      <nav ref="navEl">
         <router-link
           v-for="item in visibleNav"
           :key="item.path"
@@ -89,6 +124,11 @@ async function onLogout() {
         >
           <span class="ico">{{ ICONS[item.path] || '•' }}</span>
           <span>{{ item.meta?.title }}</span>
+          <span
+            v-if="badgeCount(item.path) > 0"
+            class="nav-badge"
+            style="display: inline-block"
+          >{{ badgeText(badgeCount(item.path)) }}</span>
         </router-link>
       </nav>
 
@@ -99,8 +139,8 @@ async function onLogout() {
       <div class="topbar">
         <div class="page-title">{{ route.meta.title }}</div>
         <div class="user-area">
+          <span v-if="auth.role" class="role-badge" :class="`r-${auth.role}`">{{ roleLabel(auth.role) }}</span>
           <span class="user-name">{{ auth.user?.nickname || auth.user?.username || '管理员' }}</span>
-          <span v-if="auth.role" class="role-badge" :class="`r-${auth.role}`">{{ auth.role }}</span>
           <button class="btn ghost sm" @click="onLogout">退出</button>
         </div>
       </div>
@@ -113,6 +153,9 @@ async function onLogout() {
         </router-view>
       </div>
     </div>
+
+    <!-- 小运悬浮球（仅 ADMIN 渲染，组件内部自行判定角色） -->
+    <AiAssistant />
   </div>
 </template>
 

@@ -43,8 +43,25 @@ import java.util.function.Predicate;
 @Component
 public class ActionCatalog {
 
-    /** 提案默认有效期（PRD Q5 拍板 5 分钟）。 */
-    public static final Duration PROPOSAL_TTL = Duration.ofMinutes(5);
+    /**
+     * 提案默认有效期。
+     *
+     * <h3>为什么从 5 分钟放宽到 30 分钟</h3>
+     * 原值 5 分钟（PRD Q5）在真实使用里明显不够：运营的正常动作是
+     * 「读提案正文 → 核对金额/时间窗 → 手上正好有别的事 → 回头再点」，
+     * 一旦超过 5 分钟，卡片在 {@code admin_action_logs} 里被翻成 {@code EXPIRED}，
+     * {@code /actions/pending} 再也查不到它，刷新页面后就<b>永久消失</b> ——
+     * 而对话文本仍然写着「确认卡片就在本消息下方」，运营只能对着空白反复找。
+     * 实测后台连续 7 次生成全部 `EXPIRED`（16:37–16:56）。
+     *
+     * <h3>放宽不降低安全性</h3>
+     * 有效期的真正作用只是「别让一张老卡片在数据早已变化后还被误点」，
+     * 而这由执行器的<b>四项校验</b>（动作/对象/操作人/参数指纹）与幂等键各自兜住：
+     * 提案被改过 → {@code PROPOSAL_MISMATCH}；数据变了 → {@code CONFLICT_*}；
+     * 已执行过 → {@code DUPLICATE_ACTION}。因此 TTL 是可以放心放宽的时间窗，
+     * 不是安全边界本身。
+     */
+    public static final Duration PROPOSAL_TTL = Duration.ofMinutes(30);
 
     /** 退款二次确认阈值：金额 ≥ ¥500。 */
     private static final BigDecimal SECOND_CONFIRM_REFUND_AMOUNT = new BigDecimal("500");

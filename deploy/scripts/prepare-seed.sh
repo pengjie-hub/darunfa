@@ -2,9 +2,9 @@
 # =====================================================================
 # 清理并校验种子数据 SQL
 #
-# 背景：docs/darunfa_seed_20261023.sql 的开头混入了当时 mysqldump 在
-#       PowerShell 里产生的报错文本（"mysqldump.exe : ... NativeCommandError"），
-#       直接导入 MySQL 会在第一行报 ERROR 1064。
+# 背景：docs/ 下的 mysqldump 导出可能混入当时终端（PowerShell）的报错输出，
+#       例如 "mysqldump.exe : ... NativeCommandError"，直接导入 MySQL 会报 ERROR 1064。
+#       本脚本从第一个 "-- MySQL dump" 标记处截取，并做基本校验。
 #
 # 用法（在仓库根目录或任意位置执行均可）：
 #   bash deploy/scripts/prepare-seed.sh
@@ -14,7 +14,9 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SRC="$REPO_ROOT/docs/darunfa_seed_20261023.sql"
+
+# 默认用最新的一份导出；换源文件时改这里
+SRC="$REPO_ROOT/docs/darunfa_seed_20261101.sql"
 OUT_DIR="$REPO_ROOT/deploy/sql"
 OUT="$OUT_DIR/01-darunfa-seed.sql"
 

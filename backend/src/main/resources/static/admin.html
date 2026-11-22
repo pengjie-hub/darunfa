@@ -90,7 +90,7 @@
     </div>
 </div>
 
-<script src="xiaoyun-action.js?v=2"></script>
+<script src="xiaoyun-action.js?v=3"></script>
 <script>
 // ==================== 基础封装 ====================
 const TOKEN_KEY = 'token';
@@ -2716,50 +2716,223 @@ function resetAiDialog() {
     appendAiSuggestions();
 }
 
+// ==================== 小运卡片：脚本自愈 / 单卡去重 / 0 卡兜底 ====================
+
 /**
- * 渲染小运本轮返回的「待确认提案卡片」与「追问选项」。
+ * 卡片渲染器脚本地址。
+ * <p>换版本时**这里和上面的 {@code <script src>} 必须一起改**，否则浏览器会继续用旧缓存。
+ */
+const XY_ACTION_SRC = 'xiaoyun-action.js?v=3';
+
+/**
+ * 当前页面上「已经画出来的卡片」对应的 proposalId 集合。
+ *
+ * <p>为什么需要它：同一张提案可能在三个地方出现 —— 本轮答复下方、待确认区块、
+ * 0 卡兜底的补救渲染。没有任何一层去重时，同一张卡会重复出现两三次，
+ * 运营会以为是两个不同的活动，点错就真的多建一条。
+ *
+ * <p>为什么每次都以 DOM 为准重建（{@link xySyncRenderedIds}）而不是只增不减：
+ * 待确认区块刷新时会先删掉旧卡片，那些 ID 必须重新变回「未渲染」，
+ * 否则刷新后区块会永远是空的，「卡片丢了能在区块里找回」这条恢复路径就断了。
+ */
+const XY_RENDERED_IDS = new Set();
+
+/** 答复里出现这些话术 = 小运在「让你点卡片」，若实际 0 卡就必须给用户可见反馈。 */
+const XY_CARD_TALK = /卡片|点击确认|点确认|确认按钮/;
+
+/** 从 DOM 重建「已渲染提案 ID」集合。 */
+function xySyncRenderedIds() {
+    XY_RENDERED_IDS.clear();
+    document.querySelectorAll('#aiMessages .xy-card[data-proposal-id]').forEach(el => {
+        const id = el.getAttribute('data-proposal-id');
+        if (id) XY_RENDERED_IDS.add(id);
+    });
+}
+
+/**
+ * 同一张提案只渲染一次的批量渲染。
+ *
+ * <p>没有 {@code proposalId} 的提案无法去重，一律放行 —— 宁可多画一张，
+ * 也不能因为缺字段把卡片吞掉（那正是这次要修的现象）。
+ *
+ * @param {Element} container 挂载点
+ * @param {Array} list 提案数组
+ * @param {Object} [options] 透传给 XiaoyunAction.renderAll 的选项
+ * @returns {Array<Element>} 本次真正新渲染出来的卡片
+ */
+function xyRenderOnce(container, list, options) {
+    if (!container || typeof XiaoyunAction === 'undefined' || !Array.isArray(list)) return [];
+    xySyncRenderedIds();
+    const fresh = list.filter(p => p && (!p.proposalId || !XY_RENDERED_IDS.has(p.proposalId)));
+    if (!fresh.length) return [];
+    const cards = XiaoyunAction.renderAll(container, fresh, options) || [];
+    cards.forEach(el => {
+        const id = el && el.getAttribute ? el.getAttribute('data-proposal-id') : '';
+        if (id) XY_RENDERED_IDS.add(id);
+    });
+    return cards;
+}
+
+/**
+ * 确保 {@code window.XiaoyunAction} 可用；不可用时**动态补一次**脚本加载。
+ *
+ * <p>为什么需要：{@code renderAiProposals} 原先第一行是
+ * {@code if (!data || typeof XiaoyunAction === 'undefined') return;} ——
+ * 脚本没加载成功（冷缓存 404、CDN/代理拦截、旧标签页里脚本被中断、扩展插件拦截）
+ * 时这里会<b>静默返回</b>，一个字都不提示。现象就是用户报的：
+ * 小运说「卡片已生成，请点击确认」，页面上空无一物，控制台也没有任何红字。
+ *
+ * <p>加载失败时补一次带 {@code retry} 时间戳的请求，绕开可能被缓存的失败记录；
+ * 8 秒还拿不到就放弃并让调用方给出可见提示，绝不让对话卡死。
+ *
+ * @returns {Promise<Object|null>} 渲染器对象；确实拿不到时为 null
+ */
+let xyActionLoading = null;
+function ensureXiaoyunAction() {
+    if (typeof window.XiaoyunAction !== 'undefined') return Promise.resolve(window.XiaoyunAction);
+    if (xyActionLoading) return xyActionLoading;
+    xyActionLoading = new Promise(resolve => {
+        const s = document.createElement('script');
+        s.src = XY_ACTION_SRC + '&retry=' + Date.now();
+        s.async = true;
+        let settled = false;
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            resolve(typeof window.XiaoyunAction !== 'undefined' ? window.XiaoyunAction : null);
+        };
+        s.onload = finish;
+        s.onerror = finish;
+        // onload/onerror 都不触发的极端场景（插件拦截）也要放行，否则整个对话流程被吊死
+        setTimeout(finish, 8000);
+        document.head.appendChild(s);
+    }).then(A => {
+        xyActionLoading = null; // 允许下一轮再试；成功后函数第一行会直接返回
+        return A;
+    });
+    return xyActionLoading;
+}
+
+/**
+ * 在小运消息流里插一条可见提示条（0 卡兜底 / 脚本加载失败时用）。
+ *
+ * <p>样式全部 inline 复用主题变量，不新增设计语言；{@code warn} 用警示色，
+ * 让「小运让你点卡片但页面没有卡」这件事一眼能看见，而不是继续假装无事发生。
+ *
+ * @param {string} text 提示文案
+ * @param {boolean} warn 是否用警示色
+ * @returns {Element}
+ */
+function appendAiNote(text, warn) {
+    const div = document.createElement('div');
+    div.className = 'xy-nocard-hint';
+    // 提示色只借用主题已有的语义 token，不新增一套配色：
+    //   · warn=true  → 警示（--warning-* 橙色），用于「提案没生成成功」
+    //   · warn=false → 说明（白底 + --info 蓝色左边），用于「已为你补加载」
+    // 刻意**不用 --brand-***：品牌色是红色，浅色阶看起来就是报错，
+    // 一条「我帮你补上了」的说明被读成「出错了」反而增加困惑。
+    div.style.cssText = 'align-self:stretch;box-sizing:border-box;max-width:100%;margin:8px 0;' +
+        'padding:10px 12px;border-radius:var(--radius-md,12px);font-size:13px;line-height:1.6;' +
+        (warn
+            ? 'background:var(--warning-surface,#FFF3E0);color:var(--warning-strong,#C2410C);' +
+              'border:1px solid var(--warning,#FF7A1A);border-left:3px solid var(--warning,#FF7A1A);'
+            : 'background:var(--card,#fff);color:var(--foreground,#3d3929);' +
+              'border:1px solid var(--border,#e3e0d4);border-left:3px solid var(--info,#1565C0);');
+    div.textContent = text;
+    aiMessages.appendChild(div);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+    return div;
+}
+
+/** 卡片执行成功后的副作用：刷侧栏红点（退款/客服/风险待办数会变）。 */
+function aiCardSettled(proposal, env) {
+    if (!env || env.code !== 0) return;
+    try {
+        if (typeof refreshRefundUnread === 'function') refreshRefundUnread();
+        if (typeof refreshCsUnread === 'function') refreshCsUnread();
+        if (typeof refreshRiskUnread === 'function') refreshRiskUnread();
+        // 「风险消息一键已读」执行完成后，若风险页正开着，把列表重画一遍：
+        // 否则旧行上的「●」未读点和「标已读」按钮会留在那里，看起来像没生效。
+        if (currentMod === 'risk' && typeof renderRisk === 'function') renderRisk();
+    } catch (e) {
+        // 红点刷新失败绝不能影响卡片状态展示
+    }
+}
+
+/**
+ * 渲染小运本轮返回的「待确认提案卡片」与「追问选项」，并在每轮结束后刷新待确认区块。
  *
  * <p><b>卡片上没有一个数字是前端算的</b>：金额、状态变化、库存、订单号全部来自
  * {@code proposal.fields[]} / {@code actionLabel} / {@code targetLabel} / {@code risk} /
  * {@code precheck}，{@code XiaoyunAction} 只负责排版。这是为了解决「同一件事在后台列表、
  * 小运答复、卡片三处显示不一致」的老问题。
  *
- * <p>提案为空时**什么都不渲染** —— 后端只会把 {@code prepare_*} 工具的真实返回编译成提案，
- * 所以「模型嘴上说已准备好卡片、实际没调工具」的结果就是 0 张卡片，而不是一张假卡片。
+ * <h3>三层兜底（对应这次「说卡片已生成、页面却没有卡片」的故障）</h3>
+ * <ol>
+ *   <li><b>脚本自愈</b>：渲染器没加载成功时动态补一次 {@code xiaoyun-action.js}，
+ *       而不是静默 return；彻底拿不到就在消息流里明说原因。</li>
+ *   <li><b>0 卡兜底</b>：本轮 {@code proposals} 为空、但答复文本里出现「卡片 / 点击确认」
+ *       这类话术时，自动拉一次 {@code /admin/ai/actions/pending}：
+ *       有待确认提案就补渲染（用户马上能点），确实没有就给一条警示提示条，
+ *       明确告诉用户「提案没生成成功，请重试」。绝不让页面假装什么都没发生。</li>
+ *   <li><b>每轮刷新区块</b>：无论本轮有没有卡，都刷新顶部「待确认操作」区块，
+ *       保证「卡片丢了 → 区块里还能找回来」这条恢复路径永远成立。
+ *       同一 {@code proposalId} 全页只渲染一次，不会出现两张一样的卡。</li>
+ * </ol>
  *
- * <p>执行成功后顺手刷新侧边栏红点（退款/客服待办数会变），失败不动。
+ * @param {Object} data {@code /admin/ai/assistant} 的 data 段
+ * @returns {Promise<void>}
  */
-function renderAiProposals(data) {
-    if (!data || typeof XiaoyunAction === 'undefined') return;
+async function renderAiProposals(data) {
+    if (!data || typeof data !== 'object') return;
+
+    // ---- 第 1 层：确认渲染器可用（不可用就补加载） ----
+    const A = await ensureXiaoyunAction();
+    if (!A) {
+        appendAiNote('卡片渲染脚本加载失败，本轮即使有提案也暂时无法显示。请刷新页面（Ctrl+F5）后重试。', true);
+        return;
+    }
 
     // needsClarification 目前后端返回 Boolean（弱信号：只用于提示，不拦卡片）。
     // 若将来后端改成 {options:[...]}，这里无需改动即可渲染可点选项。
     const nc = data.needsClarification;
     const clarifyOptions = (nc && typeof nc === 'object' && Array.isArray(nc.options)) ? nc.options : null;
     if (clarifyOptions) {
-        XiaoyunAction.renderOptions(aiMessages, clarifyOptions, text => {
+        A.renderOptions(aiMessages, clarifyOptions, text => {
             aiInput.value = text;
             aiInput.focus();
         });
     }
 
-    if (!Array.isArray(data.proposals) || !data.proposals.length) return;
+    const proposals = Array.isArray(data.proposals) ? data.proposals : [];
 
-    XiaoyunAction.renderAll(aiMessages, data.proposals, {
-        onSettled: (proposal, env) => {
-            if (!env || env.code !== 0) return;
-            try {
-                if (typeof refreshRefundUnread === 'function') refreshRefundUnread();
-                if (typeof refreshCsUnread === 'function') refreshCsUnread();
-                if (typeof refreshRiskUnread === 'function') refreshRiskUnread();
-                // 「风险消息一键已读」执行完成后，若风险页正开着，把列表重画一遍：
-                // 否则旧行上的「●」未读点和「标已读」按钮会留在那里，看起来像没生效。
-                if (currentMod === 'risk' && typeof renderRisk === 'function') renderRisk();
-            } catch (e) {
-                // 红点刷新失败绝不能影响卡片状态展示
-            }
+    // ---- 正常路径：本轮确实有提案，画卡片 ----
+    if (proposals.length) {
+        xyRenderOnce(aiMessages, proposals, { onSettled: aiCardSettled });
+        // 第 3 层：本轮结束后刷新区块（刚画过的卡会被去重跳过，不会重复）
+        await loadAiPending();
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+        return;
+    }
+
+    const answer = String(data.answer || '');
+
+    // ---- 第 2 层：0 卡但小运在「让你点卡片」 ----
+    if (XY_CARD_TALK.test(answer)) {
+        const added = await loadAiPending();
+        if (added > 0) {
+            appendAiNote('本轮答复里提到的卡片没有随消息一起下发，已为你从「待确认操作」区块补加载 ' +
+                added + ' 张待确认卡片，请在上方区块里点击确认。', false);
+            return;
         }
-    });
+        appendAiNote('本轮没有生成可执行卡片。小运让你点卡片但页面上没有卡片，说明提案没有真正生成成功 —— ' +
+            '请重试，或直接说「重新准备一次」。', true);
+        return;
+    }
+
+    // ---- 普通只读问答（没提卡片）：不打扰，但区块照样刷新 ----
+    await loadAiPending();
+    aiMessages.scrollTop = aiMessages.scrollHeight;
 }
 
 async function sendAiMsg() {
@@ -2778,8 +2951,17 @@ async function sendAiMsg() {
         const data = await api('/admin/ai/assistant', 'POST', { message: text });
         placeholder.classList.remove('thinking');
         placeholder.textContent = ((data && data.answer) || '').trim() || '（无答复）';
-        // 卡片紧跟在答复气泡下面（同一条消息流），不另开弹窗
-        renderAiProposals(data);
+        // 卡片紧跟在答复气泡下面（同一条消息流），不另开弹窗。
+        // 内部会 await 一次待确认区块刷新，因此这里要等它跑完再滚到底。
+        //
+        // 单独一层 try：卡片渲染/待确认拉取里的任何意外都**绝不能**冒泡到外层
+        // —— 外层 catch 会把 placeholder 改成「网络异常」，把已经拿到的答复原文覆盖掉。
+        // 答复已经正确显示，渲染失败只该少一张卡，不该让用户以为整轮请求失败了。
+        try {
+            await renderAiProposals(data);
+        } catch (renderErr) {
+            if (window.console) console.warn('[小运] 卡片渲染失败，答复已正常显示', renderErr);
+        }
     } catch (e) {
         placeholder.classList.remove('thinking');
         placeholder.classList.add('error');
@@ -2818,20 +3000,26 @@ async function loadAiHistory() {
  *
  * <p>执行成功（{@code env.code === 0}）后把该卡从区块移除并更新计数；
  * 数量归零时隐藏区块；接口为空或失败时**不渲染任何占位**，不影响正常对话。
+ *
+ * <p>现在每轮对话结束后也会调用一次（见 {@link renderAiProposals}），
+ * 用 {@link xyRenderOnce} 去重：本轮已经画在答复下方的卡不会再进区块。
+ *
+ * @returns {Promise<number>} 本次**新渲染**的卡片数量（0 表示区块没出现或没有新卡）
  */
 async function loadAiPending() {
-    // 每次进入小运都重建，避免重复打开时叠出多个区块
+    // 每次重建：先删旧区块（旧卡片随之离开 DOM），再让去重集合重新变回「未渲染」
     const stale = document.getElementById('aiPendingBlock');
     if (stale && stale.parentNode) stale.parentNode.removeChild(stale);
-    if (typeof XiaoyunAction === 'undefined') return;
+    const A = await ensureXiaoyunAction();
+    if (!A) return 0;
 
     let list;
     try {
         list = await api('/admin/ai/actions/pending');
     } catch (e) {
-        return; // 拉取失败不打断对话：区块不出现即可
+        return 0; // 拉取失败不打断对话：区块不出现即可
     }
-    if (!Array.isArray(list) || !list.length) return; // 为空不渲染任何占位
+    if (!Array.isArray(list) || !list.length) return 0; // 为空不渲染任何占位
 
     const wrap = document.createElement('div');
     wrap.className = 'xy-pending';
@@ -2855,7 +3043,7 @@ async function loadAiPending() {
     // 插到消息流最顶部（历史对话与欢迎语之上），保持「待办优先」的视觉顺序
     aiMessages.insertBefore(wrap, aiMessages.firstChild);
 
-    const cards = XiaoyunAction.renderAll(listEl, list, {
+    const cards = xyRenderOnce(listEl, list, {
         onSettled: (proposal, env) => {
             if (!env || env.code !== 0) return; // 失败保留卡片，让运营看到原因
             try {
@@ -2881,18 +3069,24 @@ async function loadAiPending() {
     // 计数以「真正渲染出来的卡片」为准：结构不可用的提案会被 renderAll 跳过
     count.textContent = String(cards.length);
     if (!cards.length) {
+        // 全部已在答复下方画过 → 不重复展示，区块直接撤掉
         if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        return 0;
     }
+    return cards.length;
 }
 
 function initAiAssistant() {
+    // 预热卡片渲染器：脚本若在首屏因缓存/拦截没加载成功，这里就开始补加载，
+    // 等用户真正发第一句话时它通常已经就绪，不会拖慢答复。
+    ensureXiaoyunAction();
     document.getElementById('aiFab').onclick = async () => {
         document.getElementById('aiMask').classList.add('show');
         resetAiDialog();
         // 先回放历史（loadAiHistory 可能清空消息列表），再插入待确认区块，
         // 否则区块会被随后的 history 覆盖掉。
         await loadAiHistory();
-        loadAiPending();
+        await loadAiPending();
         aiInput.focus();
     };
     document.getElementById('aiClose').onclick = () => document.getElementById('aiMask').classList.remove('show');

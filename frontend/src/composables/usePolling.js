@@ -11,7 +11,8 @@
  * 使用：
  *   const { start, stop, isRunning } = usePolling(() => fetch(), { interval: 5000, immediate: true })
  */
-import { onMounted, onBeforeUnmount, onBeforeRouteLeave } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 
 export function usePolling(fn, opts = {}) {
   const {
@@ -22,8 +23,9 @@ export function usePolling(fn, opts = {}) {
   } = opts
 
   let timer = null
-  let lastRunAt = 0
-  const isRunning = { value: false }
+  let paused = false            // 独立标记：不能用 timer 复用字符串哨兵
+  const lastRunAt = ref(0)
+  const isRunning = ref(false)
 
   async function tick() {
     try {
@@ -31,15 +33,15 @@ export function usePolling(fn, opts = {}) {
     } catch (e) {
       onError?.(e)
     } finally {
-      lastRunAt = Date.now()
+      lastRunAt.value = Date.now()
     }
   }
 
   function start() {
     if (timer) return
+    timer = setInterval(tick, interval)
     isRunning.value = true
     if (immediate) tick()
-    timer = setInterval(tick, interval)
   }
 
   function stop() {
@@ -47,14 +49,21 @@ export function usePolling(fn, opts = {}) {
     isRunning.value = false
   }
 
-  function pause() { stop() }
-  function resume() { start() }
+  function pause() {
+    stop()
+    paused = true
+  }
+
+  function resume() {
+    paused = false
+    start()
+  }
 
   // —— tab 可见性切换自动暂停/恢复 ——
   function onVisibilityChange() {
     if (document.hidden) {
-      if (timer) { pause(); timer = 'paused' } // 标记一下，方便恢复时识别
-    } else if (timer === 'paused') {
+      if (timer) pause()
+    } else if (paused) {
       resume()
     }
   }

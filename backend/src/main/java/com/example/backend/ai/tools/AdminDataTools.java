@@ -1,5 +1,7 @@
 package com.example.backend.ai.tools;
 
+import com.example.backend.ai.context.AdminActionContext;
+import com.example.backend.dto.ActionProposal;
 import com.example.backend.entity.Order;
 import com.example.backend.entity.OrderStatus;
 import com.example.backend.entity.Product;
@@ -10,6 +12,7 @@ import com.example.backend.repository.ProductRepository;
 import com.example.backend.repository.PromotionRepository;
 import com.example.backend.repository.ReviewRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.service.AdminActionService;
 import com.example.backend.service.AdminService;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
@@ -55,19 +58,23 @@ public class AdminDataTools {
     private final PromotionRepository promotionRepository;
     private final ReviewRepository reviewRepository;
     private final AdminService adminService;
+    /** 只用来只读地查「当前登录人还没确认的提案」，不执行任何动作。 */
+    private final AdminActionService adminActionService;
 
     public AdminDataTools(OrderRepository orderRepository,
                           ProductRepository productRepository,
                           UserRepository userRepository,
                           PromotionRepository promotionRepository,
                           ReviewRepository reviewRepository,
-                          AdminService adminService) {
+                          AdminService adminService,
+                          AdminActionService adminActionService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.promotionRepository = promotionRepository;
         this.reviewRepository = reviewRepository;
         this.adminService = adminService;
+        this.adminActionService = adminActionService;
     }
 
     // =====================================================================
@@ -450,9 +457,78 @@ public class AdminDataTools {
     }
 
     // =====================================================================
-    //  共用辅助
+    //  9. 待确认操作卡片（只读）
     // =====================================================================
 
+    /**
+     * 回答「我的卡片呢 / 有几个待确认」这类问题。
+     *
+     * <h3>为什么必须有这个工具</h3>
+     * 之前小运被问到「卡片在哪里」时只能回<b>「我没有能查询待确认提案状态的工具」</b>，
+     * 然后把找卡片的活儿全推给运营 —— 而它明明是唯一知道「刚才是谁、在什么时候、
+     * 准备了哪几张卡」的一方。加上这个只读工具后，它能直接说出「你还有 1 张卡，
+     * 10-27 18:52 前有效」，与页面上真实渲染的卡片对齐。
+     *
+     * <h3>安全</h3>
+     * <ul>
+     *   <li><b>纯只读</b>：不执行、不生成、不过期任何提案（{@code pendingProposals} 内部只会
+     *       把已超时的行翻成 {@code EXPIRED}，那是它本来就该做的惰性清理）；</li>
+     *   <li>operatorId 只取 {@link AdminActionContext#current()}（由 Controller 从 token 绑定），
+     *       <b>工具签名里没有 operatorId 参数</b>，模型无法查别人的卡片；</li>
+     *   <li>方法名不以 {@code prepare_} 开头 —— {@code AdminAssistantService} 只把
+     *       {@code prepare_*} 的返回串编译成提案，因此本工具的返回不会被误当成一张卡片。</li>
+     * </ul>
+     */
+    @Tool(name = "list_pending_actions", value = """
+            查询当前登录人「已经生成、但还没点确认」的操作卡片。\
+            用户问「我的卡片呢」「卡片在哪」「有几个待确认」「刚才那个活动怎么没生效」时，\
+            先调这个工具再回答，不要凭空猜。只读：不会执行任何操作，也不会生成新卡片。""")
+    public String listPendingActions() {
+        try {
+            AdminActionContext ctx = AdminActionContext.current().orElse(null);
+            if (ctx == null || ctx.operatorId() == null) {
+                return "{\"error\":\"当前请求没有登录身份上下文，无法查询待确认卡片\"}";
+            }
+            List<ActionProposal> list = adminActionService.pendingProposals(ctx.operatorId(), 20);
+            if (list == null || list.isEmpty()) {
+                return "{\"count\":0,\"items\":[],\"hint\":\"当前没有未过期的待确认卡片。"
+                        + "已确认过或已超过有效期的提案不会出现在这里；"
+                        + "如果确实要执行，请重新生成一张卡片。\"}";
+            }
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < list.size(); i++) {
+                ActionProposal p = list.get(i);
+                if (i > 0) sb.append(",");
+                sb.append("{")
+                        .append("\"action\":\"").append(safe(p.actionLabel())).append("\"")
+                        .append(",\"target\":\"").append(safe(p.targetLabel())).append("\"")
+                        .append(",\"expiresAt\":\"").append(stampOf(p.expiresAt())).append("\"")
+                        .append("}");
+            }
+            sb.append("]");
+            return "{\"count\":" + list.size() + ",\"items\":" + sb + ","
+                    + "\"hint\":\"这些卡片就显示在对话窗口里（消息流中或顶部「待确认操作」区块），"
+                    + "需要你亲手点一次「确认执行」才会真正生效。\"}";
+        } catch (Exception e) {
+            return error(e);
+        }
+    }
+
+    /** ISO 带时区串 → {@code MM-dd HH:mm}；解析不了就原样返回前 16 个字符。 */
+    private static String stampOf(String iso) {
+        if (iso == null || iso.isBlank()) return "";
+        String s = iso.trim();
+        try {
+            java.time.OffsetDateTime t = java.time.OffsetDateTime.parse(s);
+            return t.format(DateTimeFormatter.ofPattern("MM-dd HH:mm"));
+        } catch (Exception ignore) {
+            return s.length() > 16 ? s.substring(0, 16) : s;
+        }
+    }
+
+    // =====================================================================
+    //  共用辅助
+    // =====================================================================
     private static boolean hitsKeyword(Product p, String kw) {
         if (p.getName() != null && p.getName().contains(kw)) return true;
         return p.getSubtitle() != null && p.getSubtitle().contains(kw);

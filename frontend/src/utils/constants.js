@@ -36,7 +36,7 @@ export const PAY_STATUS = {
 
 // 支付方式（PAYMENT_METHOD）
 export const PAY_METHOD = {
-  WECHAT:  '微信支付',
+  WECHAT:  '微信',
   ALIPAY:  '支付宝',
   BANK:    '银行卡',
   CASH:    '现金',

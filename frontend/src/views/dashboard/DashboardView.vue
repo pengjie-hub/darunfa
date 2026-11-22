@@ -46,7 +46,7 @@ const statCards = computed(() => {
     { label: '会员总数',     value: d.userCount,                   accent: 'blue'   },
     { label: '商品总数',     value: d.productCount,                accent: ''       },
     { label: '订单总数',     value: d.orderCount,                  accent: ''       },
-    { label: '累计销售额',   value: fmtMoney(d.totalSales ?? 0),   accent: 'green'  },
+    { label: '累计销售额',   value: fmtMoney(d.totalSales ?? 0),   accent: 'primary' },
     { label: '待付款',       value: d.pendingPaymentCount ?? 0,    accent: 'orange' },
     { label: '待发货',       value: d.pendingShipCount ?? 0,       accent: 'orange' },
     {
@@ -352,10 +352,9 @@ onMounted(load)
 <style scoped>
 .dash-wrap { padding: 0; }
 
-/* 超时未发货面板：旧页是「四周 1px 浅红 + 左边 3px 实红」，与 admin-theme 的普通 .panel 区分开 */
+/* 超时未发货面板：旧页是「四周 1px 红色边框」（inline border-color: var(--destructive)），无左侧粗边 */
 .panel.panel-danger {
-  border-color: var(--error-200);
-  border-left: 3px solid var(--brand-500);
+  border-color: var(--destructive);
 }
 
 /* 退款 + 风险并排容器（admin-theme.css 无；和 .chart-grid 语义不同，单独给一个 grid） */
