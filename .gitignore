@@ -27,5 +27,11 @@ local.properties
 *.keystore
 *.jks
 
+# ===== 部署 =====
+# 真实密钥只存在于服务器上，永不入库
+deploy/.env
+# npm run build:backend 的产物（构建时生成，不入库）
+backend/src/main/resources/static/app/
+
 # ===== 迁移基线产物（截图/种子数据按需手动纳入）=====
 # docs/baseline/

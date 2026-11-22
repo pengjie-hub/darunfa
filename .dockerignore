@@ -1,0 +1,23 @@
+# 构建镜像时不需要的东西，传上去只会拖慢构建
+.git
+.gitignore
+.workbuddy
+.idea
+.vscode
+
+# 前端依赖（镜像内重新 npm ci）
+frontend/node_modules
+frontend/dist
+
+# 后端构建产物（镜像内重新 mvn package）
+backend/target
+
+# 前端构建产物：镜像内由 Stage 1 重新生成，避免旧哈希文件残留
+backend/src/main/resources/static/app
+
+# Android 工程与文档，与后端镜像无关
+MyApplication5
+*.docx
+*.pptx
+docs
+tmp

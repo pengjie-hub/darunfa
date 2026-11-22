@@ -16,7 +16,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <b>命名注意</b>：{@code @ConfigurationProperties} 的松绑定是按「属性名去掉前缀后的剩余段」匹配
  * accessor 的，因此 {@code deepseek.api-key} 对应字段 {@code apiKey}（属性名 {@code key} 是匹配不上的）。
  * 环境变量 {@code DEEPSEEK_API_KEY} / {@code DEEPSEEK_BASE_URL} / {@code DEEPSEEK_MODEL}
- * 由 Spring Boot 自动映射并覆盖同名配置，无需在此写 {@code ${ENV:default}} 占位符。
+ * 由 Spring Boot 松绑定自动映射并覆盖同名配置；{@code api-key} 在配置文件里仍写成
+ * {@code ${DEEPSEEK_API_KEY:}}，目的是让「key 只能来自环境变量」在配置里可见，并对缺失情况 fail-fast。
  */
 @ConfigurationProperties(prefix = "deepseek")
 public class DeepSeekProperties {

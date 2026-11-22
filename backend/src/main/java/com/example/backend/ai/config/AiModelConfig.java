@@ -71,8 +71,8 @@ public class AiModelConfig {
     private static ChatModel build(DeepSeekProperties props, Double temperature, String beanName, String tier) {
         if (props.getApiKey() == null || props.getApiKey().isBlank()) {
             throw new IllegalStateException(
-                    "DeepSeek API Key 未配置：请在 application.properties 设置 deepseek.api.key，"
-                            + "或提供环境变量 DEEPSEEK_API_KEY");
+                    "DeepSeek API Key 未配置：请设置环境变量 DEEPSEEK_API_KEY，"
+                            + "或在 application.properties 中显式配置 deepseek.api-key");
         }
         int timeoutSeconds = props.getTimeoutSeconds() == null ? 60 : props.getTimeoutSeconds();
         int maxRetries = props.getMaxRetries() == null ? 1 : props.getMaxRetries();

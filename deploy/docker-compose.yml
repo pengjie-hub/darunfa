@@ -1,0 +1,88 @@
+# =====================================================================
+# 大润发电商系统 —— 两容器：app + mysql
+#
+#   Nginx 跑在宿主机上（见 deploy/nginx/darunfa.conf），负责 80/443 与 HTTPS，
+#   反向代理到 127.0.0.1:8080。这样 Let's Encrypt 续期最简单。
+#
+#   app    只监听 127.0.0.1:8080，不直接暴露公网
+#   mysql  完全不映射端口，只在 compose 内网可达
+#
+#   启动：cd deploy && docker compose up -d --build
+#   查看：docker compose ps && docker compose logs -f app
+# =====================================================================
+
+name: darunfa
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      # 2核4G 机器上的保守配置；2核2G 请把 384M 降到 192M
+      - --innodb-buffer-pool-size=384M
+      - --performance-schema=OFF
+      - --max-connections=80
+      - --skip-name-resolve
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 deploy/.env 中设置 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: darunfa
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 首次启动（数据卷为空）时会按文件名顺序自动执行这里的 .sql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - darunfa
+
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: darunfa-backend:latest
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      # 只绑回环地址：外网必须经过 Nginx
+      - "127.0.0.1:8080:8080"
+    environment:
+      TZ: Asia/Shanghai
+      # --- 数据源：覆盖 application.properties 里的 localhost/root/123456 ---
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/darunfa?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # --- 鉴权：必须换成随机串，否则任何人都能伪造 JWT ---
+      JWT_SECRET: ${JWT_SECRET:?请在 deploy/.env 中设置 JWT_SECRET}
+      APP_ADMIN_PASSWORD: ${ADMIN_PASSWORD:?请在 deploy/.env 中设置 ADMIN_PASSWORD}
+      # --- AI：key 只走环境变量，缺了就在这里报错，不等到运行期 AI 接口 401 ---
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:?请在 deploy/.env 中设置 DEEPSEEK_API_KEY}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-flash}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    networks:
+      - darunfa
+
+volumes:
+  mysql-data:
+
+networks:
+  darunfa:
+    driver: bridge
