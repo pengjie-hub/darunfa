@@ -1,0 +1,36 @@
+# =====================================================================
+# 运行镜像（不含任何构建步骤）—— 给 2核2G 机器用
+#
+# 为什么需要它：
+#   在 2G 内存上执行 npm ci + vite build + mvn package，峰值内存会超过 2G，
+#   必然被 OOM Killer 打断（或者慢到无法接受）。
+#   所以改成「本地把 jar 打好 → 上传到服务器 → 服务器只做 COPY」。
+#
+# 构建上下文是 deploy/ 目录（因为要 COPY dist/app.jar）：
+#   docker build -t darunfa-backend:latest -f Dockerfile.runtime .
+# 正常不用手动执行，docker-compose.local.yml 会调用它。
+#
+# 前提：deploy/dist/app.jar 必须已存在（由 scripts/local-release.sh 产出）
+# =====================================================================
+
+FROM eclipse-temurin:17-jre-jammy
+
+RUN groupadd --system app \
+ && useradd --system --gid app --home-dir /app app \
+ && mkdir -p /app/logs \
+ && chown -R app:app /app
+
+WORKDIR /app
+COPY dist/app.jar /app/app.jar
+RUN chown app:app /app/app.jar
+
+USER app
+EXPOSE 8080
+
+# 2G 机器的安全上限：堆 640M 给应用，其余留给元空间/线程栈/堆外，
+# 把 MySQL 控制在 192M，整体才能挤进 2G 而不进 swap 抖动。
+ENV TZ=Asia/Shanghai \
+    JAVA_OPTS="-Xms128m -Xmx640m -XX:+UseSerialGC -Duser.timezone=Asia/Shanghai -Dfile.encoding=UTF-8"
+
+# sh -c 让 $JAVA_OPTS 能展开；exec 让 java 成为 PID 1，能收到 SIGTERM 优雅停机
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

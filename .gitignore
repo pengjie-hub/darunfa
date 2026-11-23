@@ -32,6 +32,8 @@ local.properties
 deploy/.env
 # npm run build:backend 的产物（构建时生成，不入库）
 backend/src/main/resources/static/app/
+# 本地构建出的 jar，由 scripts/local-release.sh 生成并上传，不入库
+deploy/dist/
 
 # ===== 迁移基线产物（截图/种子数据按需手动纳入）=====
 # docs/baseline/

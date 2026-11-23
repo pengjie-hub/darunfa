@@ -1,0 +1,89 @@
+# =====================================================================
+# 大润发电商系统 —— 2核2G 机器专用编排
+#
+# 与 docker-compose.yml 的区别只有一处：
+#   app 不再从源码构建（不跑 Node/Maven），而是直接 COPY 本地打好的 jar。
+#   jar 由 scripts/local-release.sh 在本地生成并上传到 deploy/dist/app.jar。
+#
+# 启动：cd /opt/darunfa/deploy && docker compose -f docker-compose.local.yml up -d --build
+# 通常不用手敲，本地执行 bash deploy/scripts/local-release.sh root@服务器IP 即可
+# =====================================================================
+
+name: darunfa
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      # 2核2G 专用：buffer pool 压到 192M，关掉 performance_schema 省 100M+
+      - --innodb-buffer-pool-size=192M
+      - --performance-schema=OFF
+      - --max-connections=50
+      - --skip-name-resolve
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 deploy/.env 中设置 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: darunfa
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 首次启动（数据卷为空）时按文件名顺序自动执行这里的 .sql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+    networks:
+      - darunfa
+
+  app:
+    build:
+      # 上下文是 deploy/ 目录：Dockerfile.runtime 要 COPY dist/app.jar
+      context: .
+      dockerfile: Dockerfile.runtime
+    image: darunfa-backend:latest
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      # 只绑回环地址：外网必须经过宿主机 Nginx
+      - "127.0.0.1:8080:8080"
+    environment:
+      TZ: Asia/Shanghai
+      # --- 2G 内存上限，覆盖 Dockerfile.runtime 里的默认值 ---
+      JAVA_OPTS: "-Xms128m -Xmx640m -XX:+UseSerialGC -Duser.timezone=Asia/Shanghai -Dfile.encoding=UTF-8"
+      # --- 数据源：覆盖 application.properties 里的 localhost/root/123456 ---
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/darunfa?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # --- 鉴权：必须换成随机串，否则任何人都能伪造 JWT ---
+      JWT_SECRET: ${JWT_SECRET:?请在 deploy/.env 中设置 JWT_SECRET}
+      APP_ADMIN_PASSWORD: ${ADMIN_PASSWORD:?请在 deploy/.env 中设置 ADMIN_PASSWORD}
+      # --- AI：key 只走环境变量，缺了就在这里报错，不等到运行期 401 ---
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:?请在 deploy/.env 中设置 DEEPSEEK_API_KEY}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-flash}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+    networks:
+      - darunfa
+
+volumes:
+  mysql-data:
+
+networks:
+  darunfa:
+    driver: bridge

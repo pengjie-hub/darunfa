@@ -28,7 +28,18 @@ fi
 
 cd "$COMPOSE_DIR"
 
-echo "==> 构建并启动容器（首次构建约 5-10 分钟，要下载 Maven 依赖含 160MB 嵌入模型）"
+echo "==> 在服务器上构建并启动容器"
+
+# 2G 机器上 npm + maven 构建大概率 OOM，先提醒一句
+MEM_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0)
+if [ "$MEM_MB" -gt 0 ] && [ "$MEM_MB" -lt 3500 ]; then
+  echo "!! 检测到内存约 ${MEM_MB}MB，这台机器直接构建容易触发 OOM Killer"
+  echo "   更稳的做法是走本地构建通道（在你自己的电脑上执行）："
+  echo "     bash deploy/scripts/local-release.sh root@<服务器公网IP>"
+  echo "   如果坚持在服务器上构建，10 秒后自动继续（Ctrl+C 取消）"
+  sleep 10
+fi
+
 docker compose up -d --build
 
 echo "==> 清理悬空镜像"
