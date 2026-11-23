@@ -107,12 +107,12 @@ echo "    已上传 $(du -h "$DEPLOY_DIR/dist/app.jar" | cut -f1)"
 echo "==> [4/4] 服务器重建镜像并启动（只 COPY jar，几十秒）"
 MSYS_NO_PATHCONV=1 ssh "$TARGET" "cd '$REMOTE_DIR/deploy' && docker compose -f docker-compose.local.yml up -d --build"
 
-echo "==> 等待应用就绪（最多 90 秒）"
-if MSYS_NO_PATHCONV=1 ssh "$TARGET" 'for i in $(seq 1 45); do curl -fsS -o /dev/null --max-time 3 http://127.0.0.1:8080/login.html && exit 0; sleep 2; done; exit 1'; then
+echo "==> 等待应用就绪（首次启动含 MySQL 建库+导入种子，最多等 4 分钟）"
+if MSYS_NO_PATHCONV=1 ssh "$TARGET" 'for i in $(seq 1 120); do curl -fsS -o /dev/null --max-time 3 http://127.0.0.1:8080/login.html && exit 0; sleep 2; done; exit 1'; then
   echo "==> 应用已就绪"
 else
-  echo "!! 未在预期时间内就绪，下面是服务器上的日志：" >&2
-  MSYS_NO_PATHCONV=1 ssh "$TARGET" "cd '$REMOTE_DIR/deploy' && docker compose -f docker-compose.local.yml logs --tail=80 app" >&2 || true
+  echo "!! 4 分钟内未就绪。先看是不是还在建库/拉镜像，不要急着重建：" >&2
+  MSYS_NO_PATHCONV=1 ssh "$TARGET" "cd '$REMOTE_DIR/deploy' && docker compose -f docker-compose.local.yml ps && docker compose -f docker-compose.local.yml logs --tail=80 app" >&2 || true
   exit 1
 fi
 
@@ -127,14 +127,32 @@ fi
 echo "==> 容器状态"
 MSYS_NO_PATHCONV=1 ssh "$TARGET" "cd '$REMOTE_DIR/deploy' && docker compose -f docker-compose.local.yml ps"
 
-cat <<EOF
+# 判断 80 端口有没有接上（Stage 5 配完 Nginx 才会通）
+if MSYS_NO_PATHCONV=1 ssh "$TARGET" 'curl -fsS -o /dev/null --max-time 3 http://127.0.0.1/app/' 2>/dev/null; then
+  cat <<EOF
 
 =============================================================
-完成。访问地址：
+完成，公网可以直接访问了：
 
   后台管理   http://$HOST/app/
   传统页面   http://$HOST/login.html
 
-（首次访问如果 502，等 10 秒再刷新，Spring Boot 启动要时间）
+账号：admin / admin123（或 opsuser / admin123）
 =============================================================
 EOF
+else
+  cat <<EOF
+
+=============================================================
+应用已在服务器内部就绪（127.0.0.1:8080 返回正常）。
+
+但 80 端口还没有接上 —— 说明 Nginx 还没配（Stage 5 未做），
+所以现在从浏览器打开 http://$HOST/app/ 是打不开的，这是预期行为。
+
+临时验证（在服务器上执行）：
+  curl -I http://127.0.0.1:8080/app/
+
+下一步：完成 Stage 5（安装并配置 Nginx），公网才能访问。
+=============================================================
+EOF
+fi
