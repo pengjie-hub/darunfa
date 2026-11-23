@@ -93,7 +93,7 @@ deepseek.api.key=sk-你的新key
 
 ```bash
 cd backend
-./mvnw spring-boot:run        # Windows: mvnw.cmd spring-boot:run
+bash ./mvnw spring-boot:run        # Windows: mvnw.cmd spring-boot:run
 ```
 
 默认监听 `8080` 端口。

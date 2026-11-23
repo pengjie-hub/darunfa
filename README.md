@@ -70,7 +70,8 @@ docs/             架构文档、API 清单、时序图、截图、部署手册
 mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS darunfa DEFAULT CHARSET utf8mb4"
 
 # 2. 后端（需 Java 17）
-cd backend && ./mvnw spring-boot:run
+#    backend/mvnw 在 Git 里是 100644，Linux/macOS 下直接 ./mvnw 会 Permission denied，统一用 bash 调用
+cd backend && bash ./mvnw spring-boot:run
 
 # 3. 管理后台（另开终端，需 Node >= 20.19）
 cd frontend && npm ci && npm run dev

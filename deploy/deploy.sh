@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =====================================================================
 # 服务器端一键更新脚本（放在 /opt/darunfa/deploy/deploy.sh）
-# 用法：cd /opt/darunfa/deploy && ./deploy.sh
+# 用法：cd /opt/darunfa/deploy && bash ./deploy.sh
 #
 # 做的事：git pull → 重建镜像 → 启动 → 等健康检查 → 打印状态
 # =====================================================================
@@ -16,6 +16,9 @@ if [ ! -f "$COMPOSE_DIR/.env" ]; then
   echo "!! 缺少 $COMPOSE_DIR/.env，请先 cp .env.example .env 并填写真实值" >&2
   exit 1
 fi
+
+# 拒绝 ChangeMe / 请替换 / 假 key，避免带弱口令启动
+bash "$COMPOSE_DIR/scripts/check-env.sh"
 
 cd "$PROJECT_DIR"
 
@@ -59,6 +62,14 @@ done
 if [ "$READY" -ne 1 ]; then
   echo "!! 应用未在预期时间内就绪，下面是最近日志：" >&2
   docker compose logs --tail=80 app >&2
+  exit 1
+fi
+
+# /app/ 在 Spring 侧是 302 → /app/index.html，必须 -L 跟随
+if curl -fsSL -o /dev/null --max-time 5 http://127.0.0.1:8080/app/; then
+  echo "==> /app/ 可访问（302 跟随）"
+else
+  echo "!! /app/ 不可访问，请检查 jar 内是否包含 static/app/index.html" >&2
   exit 1
 fi
 
