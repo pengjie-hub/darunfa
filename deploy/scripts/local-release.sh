@@ -103,9 +103,21 @@ MSYS_NO_PATHCONV=1 ssh "$TARGET" "mkdir -p '$REMOTE_DIR/deploy/dist'"
 scp -q "$DEPLOY_DIR/dist/app.jar" "$TARGET:$REMOTE_DIR/deploy/dist/app.jar"
 echo "    已上传 $(du -h "$DEPLOY_DIR/dist/app.jar" | cut -f1)"
 
-# ---------- 4. 远程重建并启动 ----------
-echo "==> [4/4] 服务器重建镜像并启动（只 COPY jar，几十秒）"
-MSYS_NO_PATHCONV=1 ssh "$TARGET" "cd '$REMOTE_DIR/deploy' && docker compose -f docker-compose.local.yml up -d --build"
+# ---------- 4. 远程重启 ----------
+# 不再每次 --build：jar 是通过 ./dist:/app/dist:ro 挂载进容器的，
+# 换版本只需重启容器。仅在镜像不存在（首次部署）或显式要求时才构建。
+# 设 REBUILD_IMAGE=1 可强制重建（改了 Dockerfile.runtime 时才需要）。
+echo "==> [4/4] 服务器重启应用容器"
+if [ "${REBUILD_IMAGE:-0}" = "1" ] \
+   || ! MSYS_NO_PATHCONV=1 ssh "$TARGET" "docker image inspect darunfa-backend:latest >/dev/null 2>&1"; then
+  echo "    镜像不存在或要求重建，先构建运行镜像（无业务文件，很快）"
+  if ! MSYS_NO_PATHCONV=1 ssh "$TARGET" "cd '$REMOTE_DIR/deploy' && docker compose -f docker-compose.local.yml build app"; then
+    echo "!! 镜像构建失败。若是 'context deadline exceeded'，说明服务器内存/磁盘吃紧：" >&2
+    echo "   在服务器上执行 free -h 和 df -h 看看，必要时先 docker builder prune -f" >&2
+    exit 1
+  fi
+fi
+MSYS_NO_PATHCONV=1 ssh "$TARGET" "cd '$REMOTE_DIR/deploy' && docker compose -f docker-compose.local.yml up -d --force-recreate app"
 
 echo "==> 等待应用就绪（首次启动含 MySQL 建库+导入种子，最多等 4 分钟）"
 if MSYS_NO_PATHCONV=1 ssh "$TARGET" 'for i in $(seq 1 120); do curl -fsS -o /dev/null --max-time 3 http://127.0.0.1:8080/login.html && exit 0; sleep 2; done; exit 1'; then

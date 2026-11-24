@@ -1,0 +1,23 @@
+# =====================================================================
+# 构建上下文白名单 —— 只排除不加入，让上下文接近空
+#
+# 背景：这里曾经没有 .dockerignore，于是每次 `docker compose up --build`
+# 都会把整个 deploy/ 目录打进上下文送给 buildkit，其中包括：
+#   dist/app.jar  227MB
+#   sql/          204KB
+#   .env          含数据库密码和 JWT_SECRET
+# 在 2核2G 的机器上，这个传输会把构建会话拖死，报：
+#   #6 ERROR: no active session for ...: context deadline exceeded
+#
+# 现在 jar 由 compose 挂载（./dist:/app/dist:ro），镜像里不需要任何业务文件，
+# 所以下面把全部内容排除掉，上下文只剩一个 Dockerfile。
+# =====================================================================
+
+# 默认排除一切
+*
+
+# Dockerfile 本身仍要可读（compose 用 -f 指定，不依赖上下文，保留更稳妥）
+!Dockerfile.runtime
+
+# 顺带一提：即使以后又需要往镜像里塞静态文件，也务必保持 .env 被排除，
+# 否则数据库密码和 JWT_SECRET 会以镜像层的形式留在服务器上。

@@ -1,28 +1,27 @@
 # =====================================================================
-# 运行镜像（不含任何构建步骤）—— 给 2核2G 机器用
+# 运行镜像（不含构建步骤，也不含 jar）—— 给 2核2G 机器用
 #
-# 为什么需要它：
-#   在 2G 内存上执行 npm ci + vite build + mvn package，峰值内存会超过 2G，
-#   必然被 OOM Killer 打断（或者慢到无法接受）。
-#   所以改成「本地把 jar 打好 → 上传到服务器 → 服务器只做 COPY」。
+# 为什么 jar 不再打进镜像：
+#   原来这里是 `COPY dist/app.jar /app/app.jar`，导致 227MB 的 jar 每次部署
+#   都要作为「构建上下文」整包传给 buildkit。2G 内存的机器扛不住这个负担，
+#   会直接崩在传输阶段：
+#     #6 [internal] load build context
+#     #6 ERROR: no active session for ...: context deadline exceeded
+#   现在改成由 compose 把宿主机目录挂进来（./dist -> /app/dist:ro）：
+#   换 jar 只需要 scp 上传 + 重启容器，完全不触发镜像构建。
 #
-# 构建上下文是 deploy/ 目录（因为要 COPY dist/app.jar）：
-#   docker build -t darunfa-backend:latest -f Dockerfile.runtime .
-# 正常不用手动执行，docker-compose.local.yml 会调用它。
-#
-# 前提：deploy/dist/app.jar 必须已存在（由 scripts/local-release.sh 产出）
+# 前提：服务器上 deploy/dist/app.jar 必须存在
+#       （由 scripts/local-release.sh 产出并上传，compose 负责挂载）
 # =====================================================================
 
 FROM eclipse-temurin:17-jre-jammy
 
 RUN groupadd --system app \
  && useradd --system --gid app --home-dir /app app \
- && mkdir -p /app/logs \
+ && mkdir -p /app/logs /app/dist \
  && chown -R app:app /app
 
 WORKDIR /app
-COPY dist/app.jar /app/app.jar
-RUN chown app:app /app/app.jar
 
 USER app
 EXPOSE 8080
@@ -32,5 +31,6 @@ EXPOSE 8080
 ENV TZ=Asia/Shanghai \
     JAVA_OPTS="-Xms128m -Xmx640m -XX:+UseSerialGC -Duser.timezone=Asia/Shanghai -Dfile.encoding=UTF-8"
 
-# sh -c 让 $JAVA_OPTS 能展开；exec 让 java 成为 PID 1，能收到 SIGTERM 优雅停机
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
+# jar 来自挂载的 /app/dist/app.jar。
+# sh -c 让 $JAVA_OPTS 能展开；exec 让 java 成为 PID 1，能收到 SIGTERM 优雅停机。
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/dist/app.jar"]
