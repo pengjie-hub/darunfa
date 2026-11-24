@@ -230,9 +230,14 @@ onMounted(load)
       </div>
 
       <div class="role-options">
-        <label v-for="r in ROLE_OPTIONS" :key="r.value" class="form-row inline role-option">
+        <label
+          v-for="r in ROLE_OPTIONS"
+          :key="r.value"
+          class="role-option"
+          :class="{ 'is-active': pickedRole === r.value }"
+        >
           <input v-model="pickedRole" type="radio" name="rolePick" :value="r.value" />
-          <span>{{ r.label }}</span>
+          <span class="role-name">{{ r.label }}</span>
           <span v-if="roleTarget && r.value === roleTarget.role" class="text-muted role-current">（当前）</span>
         </label>
       </div>
@@ -250,7 +255,45 @@ onMounted(load)
 .member-search { width: 240px; }
 .member-readonly { font-size: 12px; }
 .role-hint { margin-bottom: 12px; }
-.role-options { display: flex; flex-direction: column; gap: 2px; }
-.role-option { padding: 4px 0; }
-.role-current { font-size: 12px; }
+
+/* ── 角色选择：整行可点的卡片式 radio ──
+   这里曾经用全局类 .form-row.inline，结果被 admin-theme.css 里
+   `.form-row input { width: 100% }` 和 `height/padding/border` 命中，
+   radio 被渲染成 40px 的大圆圈，把标签文字挤到右边并换行。
+   所以不再复用 .form-row，改为独立布局，并显式重置 radio 的盒子样式。 */
+.role-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.role-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-50);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.role-option:hover { border-color: var(--ring); }
+.role-option.is-active {
+  border-color: var(--primary);
+  background: var(--brand-50);
+}
+.role-option input[type="radio"] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.role-name { font-size: 13px; color: var(--foreground); }
+.role-current { font-size: 12px; margin-left: auto; }
 </style>
