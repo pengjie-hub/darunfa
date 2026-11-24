@@ -48,13 +48,17 @@ services:
       - darunfa
 
   app:
-    build:
-      # 上下文是 deploy/ 目录，但 .dockerignore 把内容全部排除，实际几乎为空。
-      # jar 不再 COPY 进镜像（见 Dockerfile.runtime 顶部说明），构建只是套一个
-      # JRE 基础层，首次之后就不再触发。
-      context: .
-      dockerfile: Dockerfile.runtime
-    image: darunfa-backend:latest
+    # 直接用官方 JRE 镜像，不再自建。
+    #
+    # 为什么放弃自建镜像：这台机器只有 2G，buildkit 反复在构建阶段被 OOM，
+    # 报过两种错 ——
+    #   load build context: context deadline exceeded
+    #   load local bake definitions -> NotFound: forwarding Ping: no such job
+    # 而原来 Dockerfile.runtime 相对基础镜像只多了三样东西：非 root 用户、
+    # 时区、JAVA_OPTS。这三样下面全部能用 compose 声明，没必要为此付出
+    # 一整套构建流程的代价。应用本身不写任何文件（无上传、日志走 stdout），
+    # 所以容器内不需要可写目录。
+    image: eclipse-temurin:17-jre-jammy
     restart: unless-stopped
     depends_on:
       mysql:
@@ -66,11 +70,18 @@ services:
       # jar 用目录挂载（不是单文件挂载）：单文件挂载在文件缺失时 Docker 会自动
       # 建成一个同名目录，java 启动会报 "Error: Unable to access jarfile"，
       # 而目录挂载只会得到一个空目录，排查起来更直观。
-      # 换版本 = 覆盖 deploy/dist/app.jar + 重启容器，无需重建镜像。
+      # 换版本 = 覆盖 deploy/dist/app.jar + 重启容器，不涉及任何构建。
       - ./dist:/app/dist:ro
+    working_dir: /app
+    # 非 root 运行（等价于原 Dockerfile 里的 app 用户）。因为这个 uid 只读取
+    # /app/dist 下的 jar，不写盘，所以不需要额外的属主处理。
+    user: "10001:10001"
+    # $$ 是 compose 的转义写法，实际传给 sh -c 的是 $JAVA_OPTS。
+    # exec 让 java 成为 PID 1，能收到 SIGTERM 优雅停机。
+    entrypoint: ["sh", "-c", "exec java $$JAVA_OPTS -jar /app/dist/app.jar"]
     environment:
       TZ: Asia/Shanghai
-      # --- 2G 内存上限，覆盖 Dockerfile.runtime 里的默认值 ---
+      # --- 2G 内存上限：堆 640M 给应用，其余留给元空间/线程栈/堆外 ---
       JAVA_OPTS: "-Xms128m -Xmx640m -XX:+UseSerialGC -Duser.timezone=Asia/Shanghai -Dfile.encoding=UTF-8"
       # --- 数据源：覆盖 application.properties 里的 localhost/root/123456 ---
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/darunfa?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
