@@ -12,6 +12,7 @@
 # 可选环境变量：
 #   REMOTE_DIR   服务器上的项目目录，默认 /opt/darunfa
 #   SKIP_BUILD   设为 1 则跳过本地构建，直接上传已有的 deploy/dist/app.jar
+#   SKIP_PULL    设为 1 则跳过服务器端 git pull（默认会先同步 compose/nginx 改动）
 # =====================================================================
 set -euo pipefail
 
@@ -54,6 +55,19 @@ fi
 if ! MSYS_NO_PATHCONV=1 ssh "$TARGET" "bash '$REMOTE_DIR/deploy/scripts/check-env.sh'"; then
   echo "!! 服务器端 deploy/.env 未通过 preflight，请先修改占位符" >&2
   exit 1
+fi
+
+# 同步服务器端仓库：compose / nginx 配置的改动只存在于 git 里，
+# 本脚本只负责上传 jar。不同步的话会出现「本地脚本是新的、服务器编排是旧的」
+# 这种最难排查的组合（例如 compose 仍在 build，而本地已改成挂载）。
+if [ "${SKIP_PULL:-0}" != "1" ]; then
+  echo "==> 同步服务器端代码（git pull --ff-only）"
+  if ! MSYS_NO_PATHCONV=1 ssh "$TARGET" "cd '$REMOTE_DIR' && git pull --ff-only 2>&1 | tail -3"; then
+    echo "!! 服务器端 git pull 失败（可能是本地有改动或分支分叉）" >&2
+    echo "   到服务器上手动处理：cd $REMOTE_DIR && git status" >&2
+    echo "   确认无误后可用 SKIP_PULL=1 跳过这一步" >&2
+    exit 1
+  fi
 fi
 
 if [ "${SKIP_BUILD:-0}" = "1" ]; then
