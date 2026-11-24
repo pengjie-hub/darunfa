@@ -315,11 +315,42 @@ public class AdminService {
 
     // ---------- 会员管理 ----------
 
+    /**
+     * 启用 / 禁用用户。
+     *
+     * <p>禁用是高危操作，必须拦住两种会把系统锁死的情况：
+     * <ol>
+     *   <li><b>禁用自己</b>：禁用后当前账号立即登不进来（{@code AuthService} 登录时判 403
+     *       「账号已被禁用」），若此人又是唯一管理员，就没有任何在线入口可以恢复。</li>
+     *   <li><b>禁用最后一名可用管理员</b>：与 {@link #updateUserRole} 的「至少保留 1 名 ADMIN」
+     *       对称。这里用 countByRoleAndStatus 只统计状态正常的 ADMIN —— 若只统计角色总数，
+     *       已经被禁用的管理员也会被算作"还留着人"，保护形同虚设。</li>
+     * </ol>
+     *
+     * @param operatorId 当前操作者 id（来自 JWT），用于「不能禁用自己」校验
+     */
     @Transactional
-    public User updateUserStatus(Long id, Integer status) {
+    public User updateUserStatus(Long id, Integer status, Long operatorId) {
         User u = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(404, "用户不存在"));
-        u.setStatus(status == null ? 1 : status);
+        int target = (status == null || status != 0) ? 1 : 0;
+        boolean currentlyEnabled = (u.getStatus() == null || u.getStatus() != 0);
+        String label = (u.getUsername() == null ? "该用户" : u.getUsername());
+
+        // 仅对「把正常账号改成禁用」这一转变做校验；重复禁用 / 启用不再拦截（幂等）
+        if (target == 0 && currentlyEnabled) {
+            if (operatorId != null && operatorId.equals(u.getId())) {
+                throw new BusinessException(400,
+                        "不能禁用自己的账号。禁用后将立即无法登录，如确需停用请由其他管理员操作。");
+            }
+            if (u.getRole() == UserRole.ADMIN
+                    && userRepository.countByRoleAndStatus(UserRole.ADMIN, 1) <= 1) {
+                throw new BusinessException(400, "系统至少需保留 1 名可用管理员，无法禁用「"
+                        + label + "」。请先指定其他管理员后再操作。");
+            }
+        }
+
+        u.setStatus(target);
         return userRepository.save(u);
     }
 

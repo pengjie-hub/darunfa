@@ -11,10 +11,18 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { listUsers, setUserStatus, setUserRole } from '@/api/members'
 import { fmtDateTime } from '@/utils/format'
 import { usePermission } from '@/composables/usePermission'
+import { useAuthStore } from '@/stores/auth'
 import StatusTag from '@/components/common/StatusTag.vue'
 
 const { hasRole } = usePermission()
 const isAdmin = computed(() => hasRole('ADMIN'))
+
+// 当前登录用户的 id —— 用于把自己那一行的「禁用」按钮置灰（禁用自己会被后端拒绝）
+const auth = useAuthStore()
+const myId = computed(() => auth.user?.id)
+function isSelf(u) {
+  return myId.value != null && String(myId.value) === String(u.id)
+}
 
 const ROLE_BADGE = {
   ADMIN: { label: '超级管理员', color: 'red' },
@@ -60,9 +68,29 @@ async function load() {
 const togglingId = ref(null)
 
 async function toggleStatus(u) {
+  const willDisable = u.status === 1
+
+  if (willDisable) {
+    if (isSelf(u)) {
+      ElMessage.warning('不能禁用自己的账号')
+      return
+    }
+    const userLabel = u.username + (u.nickname ? `（${u.nickname}）` : '')
+    const extra = u.role === 'ADMIN'
+      ? '该账号为超级管理员，禁用后将立即失去全部管理权限（系统会校验至少保留 1 名可用管理员）。'
+      : '禁用后该账号将立即无法登录。'
+    try {
+      await ElMessageBox.confirm(
+        `确认禁用「${userLabel}」？${extra}`,
+        '⚠️ 高危操作',
+        { type: 'warning', confirmButtonText: '确认禁用', cancelButtonText: '取消' }
+      )
+    } catch (_) { return }
+  }
+
   togglingId.value = u.id
   try {
-    await setUserStatus(u.id, u.status === 1 ? 0 : 1)
+    await setUserStatus(u.id, willDisable ? 0 : 1)
     ElMessage.success('已更新')
     await load()
   } catch (e) {
@@ -171,7 +199,8 @@ onMounted(load)
                     <template v-if="isAdmin">
                       <button
                         class="btn ghost sm"
-                        :disabled="togglingId === u.id"
+                        :disabled="togglingId === u.id || (u.status === 1 && isSelf(u))"
+                        :title="u.status === 1 && isSelf(u) ? '不能禁用自己的账号' : ''"
                         @click="toggleStatus(u)"
                       >
                         {{ u.status === 1 ? '禁用' : '启用' }}

@@ -125,8 +125,9 @@ public class AdminController {
     @PutMapping("/users/{id}/status")
     @RequireAdmin
     public ApiResponse<UserDTO> updateUserStatus(@PathVariable Long id,
-                                                 @RequestBody Map<String, Integer> body) {
-        return ApiResponse.ok(UserDTO.from(adminService.updateUserStatus(id, body.get("status"))));
+                                                 @RequestBody Map<String, Integer> body,
+                                                 @RequestAttribute(AuthInterceptor.ATTR_USER_ID) Long operatorId) {
+        return ApiResponse.ok(UserDTO.from(adminService.updateUserStatus(id, body.get("status"), operatorId)));
     }
 
     @PutMapping("/users/{id}/role")
