@@ -7,7 +7,7 @@
 #   所以把构建放在你本地电脑上做，服务器只负责 COPY 一个 jar 进镜像。
 #
 # 用法（在仓库根目录执行，Windows 用 Git Bash）：
-#   bash deploy/scripts/local-release.sh root@43.108.56.60
+#   bash deploy/scripts/local-release.sh root@<你的服务器IP>
 #
 # 可选环境变量：
 #   REMOTE_DIR   服务器上的项目目录，默认 /opt/darunfa
@@ -18,7 +18,7 @@ set -euo pipefail
 TARGET="${1:-}"
 if [ -z "$TARGET" ]; then
   echo "用法: bash deploy/scripts/local-release.sh <user@host>" >&2
-  echo "例如: bash deploy/scripts/local-release.sh root@43.108.56.60" >&2
+  echo "例如: bash deploy/scripts/local-release.sh root@192.0.2.10" >&2
   exit 1
 fi
 
