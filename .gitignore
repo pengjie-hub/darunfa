@@ -27,6 +27,18 @@ local.properties
 *.keystore
 *.jks
 
+# ===== 凭据 / 口令备忘（严禁入库）=====
+# 任何写着服务器 root 密码、JWT 签名密钥、管理员初始密码的文件都不得进入仓库。
+# 仓库是 public 的，一旦推上去等于向全网公布凭据。
+docs/jwt秘钥.txt
+docs/jwt密钥.txt
+docs/*密码*.txt
+docs/*秘钥*.txt
+docs/*密钥*.txt
+*.pem
+id_rsa
+id_ed25519
+
 # ===== 部署 =====
 # 真实密钥只存在于服务器上，永不入库
 deploy/.env
